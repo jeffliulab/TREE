@@ -4,12 +4,24 @@
     <title>记忆回廊 | Tree</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* --- 全局变量：这是对齐的唯一真理 --- */
         :root {
+            /* 1. 定义时间轴（那根线）距离容器左侧的绝对位置 */
+            --axis-x: 80px; 
+            
+            /* 2. 定义水晶的尺寸 */
+            --crystal-size: 40px;
+            
+            /* 颜色定义 */
             --void-bg: #050505;
-            --crystal-color: #00f3ff; /* 青色核心 */
+            --crystal-color: #00f3ff;
             --fragment-bg: rgba(20, 30, 40, 0.7);
             --line-color: rgba(0, 243, 255, 0.2);
+            --accent-red: #ff0055;
         }
+
+        /* 基础重置 */
+        * { box-sizing: border-box; }
 
         body {
             background: var(--void-bg);
@@ -21,29 +33,34 @@
             min-height: 100vh;
         }
 
-        /* 宇宙背景层 */
+        /* 背景特效 */
         .cosmos-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: 
-                radial-gradient(circle at 50% 50%, rgba(20, 0, 50, 0.5) 0%, transparent 60%),
-                radial-gradient(circle at 80% 20%, rgba(0, 100, 255, 0.1) 0%, transparent 40%);
+                radial-gradient(circle at 50% 50%, rgba(20, 0, 50, 0.4) 0%, transparent 80%),
+                radial-gradient(circle at 80% 20%, rgba(0, 100, 255, 0.15) 0%, transparent 50%),
+                radial-gradient(circle at 10% 90%, rgba(100, 0, 255, 0.15) 0%, transparent 60%);
             z-index: -2;
         }
 
-        /* 容器：就像一条时间河流 */
+        /* 主容器：限制宽度并居中 */
         .time-stream {
             max-width: 900px;
-            margin: 0 auto;
-            padding: 4rem 1rem;
+            margin: 0 auto; /* 容器居中 */
+            /* 关键：去掉左右内边距，确保内部绝对定位坐标从容器边缘(0px)开始计算 */
+            padding: 6rem 0 4rem 0;
             position: relative;
         }
 
-        /* 左侧的光束线 */
+        /* ----------------------------------------------------
+           1. 绘制贯穿天地的主线
+           位置 = --axis-x (80px)
+        ---------------------------------------------------- */
         .time-stream::before {
             content: '';
             position: absolute;
-            left: 50px;
+            left: var(--axis-x); /* 绝对定位在 80px */
             top: 0;
             bottom: 0;
             width: 2px;
@@ -52,46 +69,96 @@
             z-index: -1;
         }
 
-        /* --- 水晶主题头 (Theme Header) --- */
+        /* ----------------------------------------------------
+           2. 记忆水晶 (Theme Header)
+           目标：水晶中心必须也在 80px
+        ---------------------------------------------------- */
         .timeline-theme-header {
             position: relative;
-            padding-left: 80px;
-            margin: 4rem 0 2rem 0;
+            /* 给文字留出空间：线的位置 + 60px间距 */
+            padding-left: calc(var(--axis-x) + 60px);
+            margin: 5rem 0 3rem 0;
             cursor: pointer;
-            perspective: 1000px;
-            transition: transform 0.3s;
-        }
-        
-        .timeline-theme-header:hover {
-            transform: scale(1.02);
+            min-height: var(--crystal-size);
+            display: flex;
+            align-items: center;
         }
 
-        /* 旋转的水晶图标 */
+        /* =========================================================
+           [NEW] 水晶本体 - 实体玻璃质感 (冷色调)
+           ========================================================= */
         .crystal-core {
             position: absolute;
-            left: 31px; /* 调整位置使其在线上 */
+            /* 【核心对齐公式】保持不变 */
+            /* left = 线的位置(80px) - (水晶宽度40px / 2) + 线宽补偿(1px) */
+            left: calc(var(--axis-x) - (var(--crystal-size) / 2) + 1px);
+            
             top: 50%;
             transform: translateY(-50%) rotate(45deg);
-            width: 40px;
-            height: 40px;
-            background: rgba(0, 243, 255, 0.1);
-            border: 2px solid var(--crystal-color);
-            box-shadow: 0 0 20px var(--crystal-color), inset 0 0 10px var(--crystal-color);
-            transition: all 0.5s ease;
-            z-index: 2;
+            width: var(--crystal-size);
+            height: var(--crystal-size);
+            z-index: 2; /* 确保水晶盖在线上 */
+            
+            /* 平滑过渡：颜色、阴影、旋转都参与动画 */
+            transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+            /* 1. 实体半透明渐变背景：模拟光线穿过实体的感觉 */
+            background: linear-gradient(
+                135deg, 
+                rgba(0, 243, 255, 0.6) 0%,   /* 左上角较亮 */
+                rgba(0, 100, 200, 0.2) 100%  /* 右下角较暗且透明 */
+            );
+            
+            /* 2. 精细的边框 */
+            border: 1px solid rgba(150, 255, 255, 0.5);
+
+            /* 3. 复杂的阴影组合来模拟棱角和深度 */
+            box-shadow: 
+                /* 外部柔和光晕 */
+                0 0 15px rgba(0, 243, 255, 0.4),
+                /* 内部左上角高光反射 (模拟棱角) */
+                inset 2px 2px 4px rgba(255, 255, 255, 0.7),
+                /* 内部右下角深度阴影 */
+                inset -2px -2px 8px rgba(0, 50, 100, 0.4);
+            
+            /* 4. 毛玻璃特效：增加实体的质感 */
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
         }
 
+        /* =========================================================
+           [NEW] 选中状态特效 - 暖色调切换 (洋红/橙色)
+           ========================================================= */
         .timeline-theme-header.is-open .crystal-core {
-            transform: translateY(-50%) rotate(225deg); /* 旋转动画 */
-            background: var(--crystal-color);
-            box-shadow: 0 0 50px var(--crystal-color);
+            /* 旋转 225度 */
+            transform: translateY(-50%) rotate(225deg);
+            
+            /* 1. 背景变为暖色渐变 */
+            background: linear-gradient(
+                135deg, 
+                rgba(255, 0, 128, 0.7) 0%,  /* 左上角洋红 */
+                rgba(255, 100, 0, 0.3) 100% /* 右下角橙红 */
+            );
+
+            /* 2. 边框变暖色 */
+            border-color: rgba(255, 150, 150, 0.6);
+
+            /* 3. 阴影变为暖色，光晕增强 */
+            box-shadow: 
+                /* 外部光晕增强且变红 */
+                0 0 30px rgba(255, 0, 85, 0.8),
+                /* 内部高光变暖白 */
+                inset 2px 2px 6px rgba(255, 200, 220, 0.8),
+                /* 内部深度变暗红 */
+                inset -3px -3px 10px rgba(100, 0, 40, 0.5);
         }
 
+        /* 标题文字 */
         .theme-title {
             background: linear-gradient(90deg, rgba(0,243,255,0.1), transparent);
-            padding: 1rem 2rem;
-            border-left: 4px solid var(--crystal-color);
-            font-size: 1.8rem;
+            padding: 0.8rem 2rem;
+            border-left: 3px solid var(--crystal-color);
+            font-size: 1.6rem;
             font-weight: 200;
             letter-spacing: 2px;
             text-transform: uppercase;
@@ -100,10 +167,19 @@
             display: inline-block;
         }
 
-        /* --- 记忆碎片 (Entries) --- */
+        /* 选中时的标题样式微调 (可选) */
+        .timeline-theme-header.is-open .theme-title {
+            border-left-color: #ff0055; /* 标题左侧边框也跟着变红 */
+            background: linear-gradient(90deg, rgba(255, 0, 85, 0.1), transparent);
+        }
+
+        /* ----------------------------------------------------
+           3. 大事记 (Timeline Item)
+           目标：小圆点中心必须也在 80px
+        ---------------------------------------------------- */
         .chapter-content {
-            display: none; /* 默认隐藏 */
-            padding-left: 80px;
+            display: none;
+            padding-left: 0; /* 清零，防止多重缩进 */
             animation: unfold 0.6s ease-out;
         }
 
@@ -113,32 +189,43 @@
         }
 
         .timeline-item {
-            margin-bottom: 2rem;
             position: relative;
+            margin-bottom: 2rem;
+            /* 内容卡片位置：和上面的标题对齐，线的位置 + 60px */
+            padding-left: calc(var(--axis-x) + 60px);
+            padding-right: 20px;
         }
 
-        /* 连接碎片的细线 */
+        /* 连接短线：从主线连到卡片 */
         .timeline-item::before {
             content: '';
             position: absolute;
-            left: -30px;
+            left: var(--axis-x); /* 起点：线的位置(80px) */
             top: 25px;
-            width: 30px;
+            width: 60px; /* 连接到内容 */
             height: 1px;
             background: rgba(255,255,255,0.3);
         }
+
+        /* 小圆点 */
         .timeline-item::after {
             content: '';
             position: absolute;
-            left: -33px;
+            /* 【核心对齐公式】 */
+            /* left = 线的位置(80px) - (圆点宽度6px / 2) + 线宽补偿(1px) */
+            /* 结果 = 78px */
+            left: calc(var(--axis-x) - 3px + 1px);
+            
             top: 22px;
             width: 6px;
             height: 6px;
             background: #fff;
             border-radius: 50%;
             box-shadow: 0 0 8px #fff;
+            z-index: 1;
         }
 
+        /* 卡片样式 */
         .timeline-content {
             background: var(--fragment-bg);
             border: 1px solid rgba(255,255,255,0.1);
@@ -147,12 +234,11 @@
             border-radius: 4px;
             position: relative;
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            /* 更有质感的边框 */
             border-left: 2px solid rgba(255,255,255,0.3);
         }
 
         .timeline-content:hover {
-            transform: translateX(10px) translateY(-2px);
+            transform: translateX(10px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             border-left-color: var(--crystal-color);
             background: rgba(30, 40, 50, 0.9);
@@ -173,9 +259,6 @@
             opacity: 0.5;
             transition: transform 0.3s;
         }
-        /* 展开时箭头旋转 */
-        .diary-content[style*="block"] ~ h3::after, 
-        .diary-content:not([style*="none"]) ~ h3::after { /* 这是一个简化的写法，实际上配合JS使用 */ }
 
         .date-label {
             display: block;
@@ -200,7 +283,7 @@
 
         @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
 
-        /* 顶部导航 */
+        /* HUD 导航 */
         .hud-nav {
             position: fixed;
             top: 20px;
@@ -211,16 +294,21 @@
             padding: 10px 20px;
             border-radius: 30px;
             border: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 15px;
         }
         .hud-nav a {
             color: #fff;
             text-decoration: none;
-            margin-left: 15px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             letter-spacing: 1px;
+            transition: color 0.3s;
+            display: flex;
+            align-items: center;
         }
-        .hud-nav a:hover { color: var(--crystal-color); }
+        .hud-nav a:hover { color: var(--crystal-color); text-shadow: 0 0 5px var(--crystal-color); }
+        .hud-nav a.danger-link:hover { color: var(--accent-red); text-shadow: 0 0 5px var(--accent-red); }
 
         .stats {
             text-align: center;
@@ -230,6 +318,10 @@
         }
         .stats strong { color: var(--crystal-color); font-size: 1.5rem; }
 
+        @media(max-width: 768px) {
+            :root { --axis-x: 30px; } /* 移动端让线靠左一点 */
+            .hud-nav { top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; justify-content: center; }
+        }
     </style>
 </head>
 <body>
@@ -238,22 +330,26 @@
     <canvas id="particle-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
 
     <div class="hud-nav">
-        <a href="/home">◀ RETURN TO CONSOLE</a>
+        <a href="/home">◀ CONSOLE</a>
+        <a href="{{ url_for('history_editor.editor_page') }}" class="danger-link">REWRITE HISTORY</a>
         <a href="/backup">BACKUP DATA</a>
     </div>
 
     <div class="time-stream">
         <div class="stats">
-            // TOTAL FRAGMENTS FOUND: <strong>{{ entry_count }}</strong>
+            // TOTAL MEMORY FRAGMENTS: <strong>{{ entry_count }}</strong>
         </div>
 
         {% set timeline = timeline_items | reverse %}
+        
+        {% set ns = namespace(chapter_open=false) %}
 
         {% for item in timeline %}
             {% if item.type == 'theme_header' %}
                 
-                {% if not loop.first %}
-                    </div> {% endif %}
+                {% if ns.chapter_open %}
+                    </div> 
+                {% endif %}
 
                 <div class="timeline-theme-header" onclick="toggleChapter(this)">
                     <div class="crystal-core"></div>
@@ -261,6 +357,7 @@
                 </div>
 
                 <div class="chapter-content">
+                {% set ns.chapter_open = true %}
 
             {% elif item.type == 'diary_entry' %}
                 <div class="timeline-item">
@@ -275,27 +372,26 @@
             <p style="text-align:center; color:#666;">VOID IS EMPTY.</p>
         {% endfor %}
 
-        {% if timeline %}
-            </div> {% endif %}
+        {% if ns.chapter_open %}
+            </div> 
+        {% endif %}
+    
     </div>
 
     <script>
-        // 1. 展开/收起日记内容
         function toggleDiary(titleElement) {
             const content = titleElement.parentElement.querySelector('.diary-content');
             if (content) {
                 const isHidden = (content.style.display === 'none' || content.style.display === '');
                 content.style.display = isHidden ? 'block' : 'none';
-                titleElement.style.color = isHidden ? '#00f3ff' : '#fff'; // 激活时变色
+                titleElement.style.color = isHidden ? '#00f3ff' : '#fff';
             }
         }
 
-        // 2. 展开/收起章节（水晶）
         function toggleChapter(headerElement) {
             const contentWrapper = headerElement.nextElementSibling;
             if (contentWrapper && contentWrapper.classList.contains('chapter-content')) {
                 const isHidden = (contentWrapper.style.display === 'none' || contentWrapper.style.display === '');
-                
                 if (isHidden) {
                     contentWrapper.style.display = 'block';
                     headerElement.classList.add('is-open');
@@ -306,7 +402,7 @@
             }
         }
 
-        // 3. 简单的漂浮粒子效果
+        // 星空特效 (加大了星星数量和层次感)
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
@@ -314,45 +410,54 @@
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            initParticles();
         }
         window.addEventListener('resize', resize);
-        resize();
+
+        const starColors = ['255, 255, 255', '0, 243, 255', '150, 200, 255', '200, 180, 255'];
 
         class Particle {
-            constructor() {
+            constructor(isInitial = false) { this.reset(isInitial); }
+            reset(isInitial) {
                 this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2;
-                this.speedX = Math.random() * 0.5 - 0.25;
-                this.speedY = Math.random() * 0.5 - 0.25;
-                this.opacity = Math.random() * 0.5 + 0.1;
+                this.y = isInitial ? Math.random() * canvas.height : -10;
+                this.depth = Math.random() * 3 + 0.5; 
+                this.size = (Math.random() * 1.5 + 0.5) * this.depth * 0.6;
+                this.speedY = (Math.random() * 0.2 + 0.1) * this.depth;
+                this.speedX = (Math.random() - 0.5) * 0.1 * this.depth;
+                this.colorBase = starColors[Math.floor(Math.random() * starColors.length)];
+                this.baseOpacity = Math.random() * 0.4 + 0.1 + (this.depth * 0.1);
+                this.opacity = this.baseOpacity;
+                this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+                this.twinkleDir = Math.random() > 0.5 ? 1 : -1;
             }
             update() {
-                this.x += this.speedX;
                 this.y += this.speedY;
-                if(this.x > canvas.width) this.x = 0;
-                if(this.x < 0) this.x = canvas.width;
-                if(this.y > canvas.height) this.y = 0;
-                if(this.y < 0) this.y = canvas.height;
+                this.x += this.speedX;
+                this.opacity += this.twinkleSpeed * this.twinkleDir;
+                if(this.opacity > this.baseOpacity + 0.2 || this.opacity < this.baseOpacity - 0.1) this.twinkleDir *= -1;
+                if(this.y > canvas.height + 10 || this.x > canvas.width + 10 || this.x < -10) this.reset();
             }
             draw() {
-                ctx.fillStyle = `rgba(0, 243, 255, ${this.opacity})`;
+                ctx.fillStyle = `rgba(${this.colorBase}, ${this.opacity})`;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
-        for(let i=0; i<100; i++) particles.push(new Particle());
+        function initParticles() {
+            particles = [];
+            for(let i=0; i<350; i++) particles.push(new Particle(true));
+        }
 
         function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animate);
         }
+
+        resize();
         animate();
     </script>
 </body>

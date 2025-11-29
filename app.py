@@ -31,39 +31,51 @@ THEMES = [
     #     "timezone": ZoneInfo("America/New_York")
     # },
     {
-        "title": "无主之地回忆水晶：1995-2009",
+        "title": "无主之地回忆录：1995-2009",
         "start": datetime(1995, 12, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2008, 8, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2008, 9, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("Asia/Shanghai") 
     },
     {
-        "title": "塔纳波契亚回忆水晶：2009-2019",
-        "start": datetime(2009, 1, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2018, 12, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "title": "西北时期回忆录：2019-2025",
+        "start": datetime(2008, 9, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2014, 9, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("Asia/Shanghai") 
     },
     {
-        "title": "卡莱卡玛罗回忆水晶：2019-2025",
-        "start": datetime(2018, 12, 31, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2025, 5, 11, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "title": "东北时期回忆录：2014-2018",
+        "start": datetime(2014, 9, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2018, 5, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("Asia/Shanghai") 
     },
     {
-        "title": "安德洛依达回忆水晶：2025-present",
-        "start": datetime(2025, 5, 11, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "title": "浪人时期回忆录：2018-2022",
+        "start": datetime(2018, 5, 31, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2022, 6, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("Asia/Shanghai") 
+    },
+    {
+        "title": "淘金时期回忆录：2022-2025",
+        "start": datetime(2022, 6, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
         "end": datetime(2025, 5, 25, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("Asia/Shanghai") 
     },
     {
-        "title": "蛇形物语",
+        "title": "蛇形物语：2025年夏",
         "start": datetime(2025, 5, 25, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
         "end": datetime(2025, 8, 24, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
     {
-        "title": "王国一部",
+        "title": "后启示录：2025年秋",
         "start": datetime(2025, 8, 24, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end":None,
+        "end": datetime(2025, 12, 16, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("America/New_York") 
+    },
+    {
+        "title": "重返校园的最后时光",
+        "start": datetime(2025, 12, 16, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2026, 6, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
 

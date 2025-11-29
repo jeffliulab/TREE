@@ -1,63 +1,161 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>已完成项目 | Tree 私密项目</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>归档扇区 | LIUJIFU.ME</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-      body { font-family:"Segoe UI","Helvetica Neue",sans-serif; background:#f4f4f4; margin:0; padding:2em; }
-      .container { max-width:700px; margin:auto; background:#fff; padding:2em; border-radius:10px;
-                   box-shadow:0 0 10px rgba(0,0,0,0.05); }
-      h2 { font-size:1.5em; color:#333; margin-bottom:1em; }
-      .entry { margin-bottom:1.5em; }
-      .toggle-btn { background:#007acc; color:#fff; border:none; padding:0.5em 1em; border-radius:6px; cursor:pointer; }
-      .toggle-btn:hover { background:#005f99; }
-      ul { list-style:none; padding:0; margin-top:0.5em; }
-      li { margin-bottom:0.3em; }
+        :root {
+            --bg-color: #0b0d17;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #e0e6ed;
+            --text-dim: #94a3b8;
+            --accent-blue: #00f3ff;
+            --accent-green: #00ff9d;
+        }
+
+        body {
+            margin: 0; padding: 2em;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: "Segoe UI", "Roboto", sans-serif;
+            min-height: 100vh;
+        }
+
+        /* 背景 */
+        #star-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2em;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        h2 {
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5em;
+            margin-bottom: 1.5em;
+            color: var(--accent-green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 300;
+        }
+
+        .entry {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-left: 3px solid #555;
+            transition: all 0.3s;
+        }
+
+        .entry:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-left-color: var(--accent-green);
+        }
+
+        .entry h3 { margin: 0 0 0.5em 0; color: #fff; }
+        .entry p { color: var(--text-dim); font-size: 0.9em; line-height: 1.6; }
+        .entry small { color: #555; font-family: monospace; }
+
+        .toggle-btn {
+            background: transparent;
+            border: 1px solid var(--glass-border);
+            color: var(--accent-blue);
+            padding: 0.5em 1.2em;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            margin-top: 1em;
+            transition: all 0.3s;
+        }
+        .toggle-btn:hover {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        }
+
+        ul { list-style: none; padding: 0; margin-top: 1em; border-top: 1px dashed #333; padding-top: 1em; }
+        li { margin-bottom: 0.5em; color: #888; font-size: 0.9em; }
+
+        .nav { margin-top: 2em; text-align: center; }
+        .nav a {
+            color: var(--text-dim); text-decoration: none;
+            border: 1px solid var(--glass-border); padding: 0.8em 2em;
+            border-radius: 30px; transition: 0.3s;
+        }
+        .nav a:hover { color: #fff; border-color: #fff; }
+
+        hr { border: 0; border-top: 1px solid var(--glass-border); margin: 2em 0; }
+
+        @keyframes fadeIn { from { opacity:0; transform: translateY(20px); } to { opacity:1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-  <div class="container">
-    <h2>🏆 已完成项目</h2>
+    <canvas id="star-canvas"></canvas>
 
-    {% if projects %}
-      {% for id, title, desc, created, total, done in projects %}
-        <div class="entry">
-          <h3>{{ title }}</h3>
-          <p><small>创建于 {{ created }}</small></p>
-          <p>{{ desc }}</p>
-          <p>完成：{{ done or 0 }} / {{ total or 0 }}</p>
-          <button class="toggle-btn" data-id="{{ id }}">查看子任务</button>
-          <ul id="tasks-{{ id }}" style="display:none;">
-            {% for task_text, task_done in tasks_map[id] %}
-              <li>{{ task_done and '☑️' or '⬜' }} {{ task_text }}</li>
+    <div class="container">
+        <h2>🏆 ARCHIVED MISSIONS</h2>
+
+        {% if projects %}
+            {% for id, title, desc, created, total, done in projects %}
+            <div class="entry">
+                <h3>{{ title }}</h3>
+                <p><small>INITIATED: {{ created }}</small></p>
+                <p>{{ desc }}</p>
+                <p style="color:var(--accent-green);">STATUS: COMPLETE ({{ done or 0 }}/{{ total or 0 }})</p>
+                
+                <button class="toggle-btn" data-id="{{ id }}">▶ DATA LOGS</button>
+                
+                <ul id="tasks-{{ id }}" style="display:none;">
+                    {% for task_text, task_done in tasks_map[id] %}
+                        <li>{{ task_done and '☑' or '☐' }} {{ task_text }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
             {% endfor %}
-          </ul>
+        {% else %}
+            <p style="text-align:center; color:#666;">ARCHIVE EMPTY.</p>
+        {% endif %}
+
+        <div class="nav">
+            <a href="{{ url_for('home') }}">◀ RETURN TO CONSOLE</a>
         </div>
-        <hr>
-      {% endfor %}
-    {% else %}
-      <p>还没有已完成的项目。</p>
-    {% endif %}
-
-    <div class="nav">
-      <a href="{{ url_for('home') }}">← 返回首页</a>
     </div>
-  </div>
 
-  <script>
-    document.querySelectorAll('.toggle-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = btn.getAttribute('data-id');
-        const ul = document.getElementById('tasks-' + id);
-        if (ul.style.display === 'none') {
-          ul.style.display = 'block';
-          btn.textContent = '收起子任务';
-        } else {
-          ul.style.display = 'none';
-          btn.textContent = '查看子任务';
+    <script>
+        // 星空背景
+        const canvas = document.getElementById('star-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const stars = Array(100).fill().map(() => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random()*1.5 }));
+        function draw() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "white";
+            stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
         }
-      });
-    });
-  </script>
+        draw(); window.addEventListener('resize', draw);
+
+        // 切换按钮
+        document.querySelectorAll('.toggle-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = btn.getAttribute('data-id');
+                const ul = document.getElementById('tasks-' + id);
+                if (ul.style.display === 'none') {
+                    ul.style.display = 'block';
+                    btn.textContent = '▼ CLOSE LOGS';
+                } else {
+                    ul.style.display = 'none';
+                    btn.textContent = '▶ DATA LOGS';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

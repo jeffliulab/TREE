@@ -1,42 +1,128 @@
-<!-- templates/project_create.html -->
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-    <title>新建项目 | Tree 私密项目</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>新建项目 | LIUJIFU.ME</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #0b0d17;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #e0e6ed;
+            --text-dim: #94a3b8;
+            --accent-blue: #00f3ff;
+        }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: "Segoe UI", sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh;
+        }
+        #star-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+        .container {
+            width: 90%; max-width: 500px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2.5em;
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.1);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--accent-blue);
+            font-weight: 300;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--glass-border);
+            color: #fff;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: inherit;
+            margin-bottom: 1.5em;
+            box-sizing: border-box;
+            outline: none;
+            transition: 0.3s;
+        }
+        input:focus, textarea:focus, select:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+        }
+
+        label { display: block; margin-bottom: 0.5em; color: var(--text-dim); font-size: 0.9em; }
+        
+        /* 自定义 Select 样式 */
+        select option { background: #1a1a2e; color: #fff; }
+
+        button[type="submit"] {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-blue), #0055ff);
+            border: none; border-radius: 30px;
+            color: #fff; font-weight: bold; cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3);
+            transition: transform 0.2s;
+        }
+        button[type="submit"]:hover { transform: scale(1.02); }
+
+        .nav { margin-top: 1.5em; text-align: center; }
+        .nav a { color: var(--text-dim); text-decoration: none; font-size: 0.9em; }
+        .nav a:hover { color: #fff; }
+    </style>
 </head>
 <body>
-<div class="container">
-    <h2>🆕 创建一个新项目</h2>
+    <canvas id="star-canvas"></canvas>
 
-    <!-- 2025/7/1更新 -->
-    <!-- <form method="POST">
-        <input type="text" name="title" placeholder="项目标题" required><br>
-        <textarea name="description" placeholder="项目描述..." rows="5"></textarea><br>
-        <button type="submit">✅ 创建项目</button>
-    </form> -->
+    <div class="container">
+        <h2>// INITIALIZE NEW MISSION</h2>
 
-    <!-- 2025/7/1更新 -->
-    <form method="POST">
-        <input type="text" name="title" placeholder="项目标题" required><br>
-        <textarea name="description" placeholder="项目描述..." rows="5"></textarea><br>
-        
-        <div style="margin-bottom:1em;">
-            <label for="priority">优先级: </label>
+        <form method="POST">
+            <label>MISSION TITLE</label>
+            <input type="text" name="title" placeholder="Enter operation name..." required autocomplete="off">
+            
+            <label>BRIEFING</label>
+            <textarea name="description" placeholder="Mission details..." rows="5"></textarea>
+            
+            <label for="priority">PRIORITY LEVEL</label>
             <select name="priority" id="priority">
-                <option value="S">S (最高)</option>
-                <option value="A">A</option>
-                <option value="B" selected>B (默认)</option>
-                <option value="C">C</option>
-                <option value="Z">Z (最低)</option>
+                <option value="S">S - CRITICAL</option>
+                <option value="A">A - HIGH</option>
+                <option value="B" selected>B - STANDARD</option>
+                <option value="C">C - LOW</option>
+                <option value="Z">Z - BACKLOG</option>
             </select>
-        </div>
-        <button type="submit">✅ 创建项目</button>
-    </form>
+            
+            <button type="submit">ACTIVATE MISSION</button>
+        </form>
 
-    <div class="nav">
-        <a href="{{ url_for('home') }}">← 返回项目首页</a>
+        <div class="nav">
+            <a href="{{ url_for('home') }}">🚫 ABORT / RETURN</a>
+        </div>
     </div>
-</div>
+
+    <script>
+        const canvas = document.getElementById('star-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        const stars = Array(80).fill().map(() => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random() }));
+        function draw() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
+        }
+        draw();
+    </script>
 </body>
 </html>

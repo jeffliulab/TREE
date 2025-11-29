@@ -1,177 +1,202 @@
-<!-- templates/project_detail.html -->
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
-  <title>项目详情 | Tree 私密项目</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <title>任务详情 | LIUJIFU.ME</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    :root {
+        --bg-color: #0b0d17;
+        --glass-bg: rgba(255, 255, 255, 0.05);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --text-main: #e0e6ed;
+        --text-dim: #94a3b8;
+        --accent-blue: #00f3ff;
+        --accent-red: #ff0055;
+        --accent-gold: #ffd700;
+    }
     body {
-      font-family:"Segoe UI","Helvetica Neue",sans-serif;
-      background:#f4f4f4;
-      margin:0;
-      padding:2em;
+        margin: 0; padding: 2em;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        font-family: "Segoe UI", sans-serif;
+        min-height: 100vh;
     }
+    #star-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
     .container {
-      max-width:700px;
-      margin:auto;
-      background:#fff;
-      padding:2em;
-      border-radius:10px;
-      box-shadow:0 0 10px rgba(0,0,0,0.05);
+        max-width: 700px; margin: auto;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        border-radius: 16px;
+        padding: 2em;
+        box-shadow: 0 0 40px rgba(0,0,0,0.5);
     }
-    h2 {
-      font-size:1.5em;
-      color:#333;
-      margin-bottom:1em;
+
+    /* 顶部信息面板 */
+    .project-info {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border-left: 4px solid var(--accent-blue);
     }
-    .project-info p {
-      margin:0.5em 0;
-      color:#666;
+
+    h3.proj-title { margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: 300; letter-spacing: 1px; color: #fff; }
+    p.proj-desc { color: var(--text-dim); line-height: 1.6; margin-bottom: 1rem; }
+    
+    button.edit-project-btn {
+        background: transparent; border: 1px solid #444; color: #888;
+        padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
     }
-    .project-info input[type="text"],
-    .project-info textarea {
-      width:100%;
-      padding:0.6em;
-      margin-bottom:1em;
-      border:1px solid #ccc;
-      border-radius:6px;
-      box-sizing:border-box;
-      font-family:inherit;
+    button.edit-project-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+    /* 编辑表单样式 */
+    .info-edit input, .info-edit textarea, .info-edit select {
+        width: 100%; background: rgba(0,0,0,0.3); border: 1px solid #444;
+        color: #fff; padding: 10px; margin-bottom: 10px; border-radius: 4px; box-sizing: border-box;
     }
-    .project-info button {
-      padding:0.5em 1em;
-      font-size:1em;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
+    .info-edit button {
+        background: var(--accent-blue); color: #000; border: none;
+        padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;
     }
-    .project-info button:hover {
-      background:#eee;
+
+    /* 子任务区域 */
+    h3 { color: var(--text-dim); font-size: 1rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+    /* 添加新任务的 Input */
+    input[name="new_task"] {
+        background: transparent; border: none; border-bottom: 1px solid #444;
+        color: #fff; padding: 10px; font-size: 1rem; width: 100%; outline: none; transition: 0.3s;
     }
-    hr {
-      margin:2em 0;
-      border:none;
-      border-top:1px solid #eee;
-    }
-    ul {
-      list-style:none;
-      padding:0;
-    }
+    input[name="new_task"]:focus { border-bottom-color: var(--accent-blue); }
+    input[name="new_task"]::placeholder { color: #555; }
+    
+    button[type="submit"] { background: transparent; border:none; color: var(--accent-blue); font-size: 1.2rem; cursor: pointer; }
+
+    ul { list-style: none; padding: 0; }
     li {
-      display:flex;
-      align-items:center;
-      margin-bottom:0.75em;
+        display: flex; align-items: center;
+        background: rgba(255,255,255,0.03);
+        margin-bottom: 8px; padding: 10px 15px;
+        border-radius: 6px; transition: 0.2s;
+        border: 1px solid transparent;
     }
-    li form,
-    li span,
-    li input,
-    li button {
-      margin-right:0.5em;
+    li:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.1); }
+
+    /* 复选框按钮 */
+    li form button { font-size: 1.1rem; padding: 0; margin-right: 10px; line-height: 1; opacity: 0.8; }
+    li form button:hover { opacity: 1; transform: scale(1.1); }
+
+    .task-label { flex: 1; font-size: 1rem; color: #ddd; }
+    
+    /* 任务编辑态 */
+    .task-input {
+        flex: 1; background: #222; border: 1px solid #444; color: #fff;
+        padding: 5px; border-radius: 4px; margin-right: 10px;
     }
-    /* 默认隐藏输入框，由 JS 显示 */
-    li .task-input {
-      flex:1;
-      padding:0.5em;
-      border:1px solid #ccc;
-      border-radius:6px;
-      display:none;
+
+    .edit-btn, .save-btn { font-size: 0.9rem; opacity: 0.5; margin-left: 10px; cursor: pointer; border:none; background:transparent;}
+    .edit-btn:hover { opacity: 1; }
+
+    /* MISSION COMPLETE 按钮 */
+    button[name="complete"] {
+        display: block; width: 100%; margin-top: 2rem;
+        padding: 15px;
+        background: rgba(255, 215, 0, 0.1);
+        border: 1px solid var(--accent-gold);
+        color: var(--accent-gold);
+        font-size: 1.2rem; letter-spacing: 2px; font-weight: bold;
+        text-transform: uppercase;
+        border-radius: 8px;
+        cursor: pointer;
+        animation: pulse 2s infinite;
     }
-    li .task-label {
-      flex:1;
-    }
-    .nav {
-      margin-top:2em;
-    }
-    .nav a {
-      margin-right:1em;
-      color:#663399;
-      text-decoration:none;
-    }
-    .nav a:hover {
-      text-decoration:underline;
-    }
+    button[name="complete"]:hover { background: var(--accent-gold); color: #000; }
+
+    @keyframes pulse { 0% { box-shadow: 0 0 0 rgba(255,215,0,0); } 70% { box-shadow: 0 0 20px rgba(255,215,0,0.3); } 100% { box-shadow: 0 0 0 rgba(0,0,0,0); } }
+
+    .nav { margin-top: 2rem; text-align: center; }
+    .nav a { color: #666; text-decoration: none; margin: 0 10px; font-size: 0.9rem; }
+    .nav a:hover { color: #fff; }
+    
+    /* Select Option Fix */
+    select option { background: #1a1a2e; }
+
   </style>
 </head>
 <body>
+  <canvas id="star-canvas"></canvas>
+
   <div class="container">
-    <h2>📁 项目详情</h2>
-
-    <!-- —— 项目标题 & 简介区域 —— -->
-    <div class="project-info">
-      <!-- 只读态 -->
-      <div class="info-view">
-        <h3 class="proj-title">{{ project[0] }}</h3>
-        <p class="proj-desc">{{ project[1] or '（暂无描述）' }}</p>
-        <button type="button" class="edit-project-btn">✏️ 修改</button>
-        <p>创建于 {{ project[2] }}</p>
-      </div>
-
-      <!-- 2025/7/1修改更新这一部分，增加了PRIORITY -->
-      <!-- 编辑态（初始隐藏） -->
-      <!-- <form method="POST" class="info-edit" style="display:none;">
-        <input type="text" name="update_title" value="{{ project[0] }}" required>
-        <textarea name="update_description" rows="3"
-          placeholder="项目简介（可为空）">{{ project[1] }}</textarea>
-        <button type="submit">✔️ 完成</button>
-      </form> -->
-
-      <!-- 2025/7/1修改更新这一部分，增加了PRIORITY -->
-      <form method="POST" class="info-edit" style="display:none;">
-        <input type="text" name="update_title" value="{{ project[0] }}" required>
-        <textarea name="update_description" rows="3"
-          placeholder="项目简介（可为空）">{{ project[1] }}</textarea>
-          
-        <div style="margin-bottom:1em;">
-            <label for="update_priority">优先级: </label>
-            <select name="update_priority" id="update_priority">
-                <option value="S" {% if project[4] == 'S' %}selected{% endif %}>S (最高)</option>
-                <option value="A" {% if project[4] == 'A' %}selected{% endif %}>A</option>
-                <option value="B" {% if project[4] == 'B' %}selected{% endif %}>B</option>
-                <option value="C" {% if project[4] == 'C' %}selected{% endif %}>C</option>
-                <option value="Z" {% if project[4] == 'Z' %}selected{% endif %}>Z (最低)</option>
-            </select>
-        </div>
-        <button type="submit">✔️ 完成</button>
-    </form>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <span style="color:#666; font-size:0.8rem;">MISSION ID: #{{ project_id }}</span>
+        <span style="
+            background:{% if project[4]=='S' %}var(--accent-red){% elif project[4]=='A' %}var(--accent-gold){% else %}#333{% endif %};
+            color:{% if project[4] in ['S','A'] %}#000{% else %}#fff{% endif %};
+            padding:2px 8px; border-radius:4px; font-size:0.8rem; font-weight:bold;">
+            LEVEL {{ project[4] }}
+        </span>
     </div>
 
-    <hr>
+    <div class="project-info">
+      <div class="info-view">
+        <h3 class="proj-title">{{ project[0] }}</h3>
+        <p class="proj-desc">{{ project[1] or '// NO DESCRIPTION DATA' }}</p>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <p style="margin:0; font-size:0.8rem; color:#666; font-family:monospace;">START DATE: {{ project[2] }}</p>
+            <button type="button" class="edit-project-btn">EDIT PARAMETERS</button>
+        </div>
+      </div>
 
-    <!-- —— 子任务区域 —— -->
-    <h3>📋 子任务 (共 {{ tasks|length }} 条)</h3>
-    <form method="POST" style="display:flex; margin-bottom:1em;">
-      <input type="text" name="new_task" placeholder="添加新任务…" style="flex:1;">
-      <button type="submit">➕</button>
+      <form method="POST" class="info-edit" style="display:none;">
+        <label style="color:#666; font-size:0.8rem;">TITLE OVERRIDE</label>
+        <input type="text" name="update_title" value="{{ project[0] }}" required>
+        
+        <label style="color:#666; font-size:0.8rem;">BRIEFING UPDATE</label>
+        <textarea name="update_description" rows="3">{{ project[1] }}</textarea>
+          
+        <div style="margin-bottom:1em;">
+            <label style="color:#666; font-size:0.8rem;">PRIORITY ADJUSTMENT</label>
+            <select name="update_priority" id="update_priority">
+                <option value="S" {% if project[4] == 'S' %}selected{% endif %}>S - CRITICAL</option>
+                <option value="A" {% if project[4] == 'A' %}selected{% endif %}>A - HIGH</option>
+                <option value="B" {% if project[4] == 'B' %}selected{% endif %}>B - STANDARD</option>
+                <option value="C" {% if project[4] == 'C' %}selected{% endif %}>C - LOW</option>
+                <option value="Z" {% if project[4] == 'Z' %}selected{% endif %}>Z - BACKLOG</option>
+            </select>
+        </div>
+        <button type="submit">SAVE CHANGES</button>
+      </form>
+    </div>
+
+    <h3>OBJECTIVES ({{ tasks|length }})</h3>
+    <form method="POST" style="display:flex; margin-bottom:1.5em; align-items:center;">
+      <input type="text" name="new_task" placeholder="Add new objective protocol..." style="flex:1;" autocomplete="off">
+      <button type="submit" style="margin-left:10px;">+</button>
     </form>
+    
     <ul>
       {% for tid, task_text, done, created_at in tasks %}
         <li data-task-id="{{ tid }}">
-          <!-- 切换完成状态 -->
-          <form method="POST">
+          <form method="POST" style="margin:0;">
             <input type="hidden" name="toggle" value="{{ tid }}">
-            <button type="submit">
-              {% if done %}✅{% else %}☐{% endif %}
+            <button type="submit" style="color:{% if done %}var(--accent-green){% else %}#555{% endif %};">
+              {% if done %}▣{% else %}□{% endif %}
             </button>
           </form>
 
-          <!-- 只读标签 -->
           <span class="task-label"
-                style="{% if done %}color:#888;text-decoration:line-through;{% endif %}">
+                style="{% if done %}color:#555; text-decoration:line-through;{% endif %}">
             {{ task_text }}
           </span>
 
-          <!-- 编辑输入框（隐藏） -->
-          <input type="text" class="task-input" value="{{ task_text }}">
+          <input type="text" class="task-input" value="{{ task_text }}" style="display:none;">
 
-          <!-- 编辑 / 保存 按钮 -->
-          <button type="button" class="edit-btn" onclick="event.preventDefault()">✏️</button>
-          <button type="button" class="save-btn" style="display:none;" onclick="event.preventDefault()">✔️</button>
+          <button type="button" class="edit-btn" onclick="event.preventDefault()">✎</button>
+          <button type="button" class="save-btn" style="display:none; color:var(--accent-blue);" onclick="event.preventDefault()">💾</button>
 
-          <!-- 时间戳 -->
-          <span style="color:#aaa;font-size:0.9em;">{{ created_at }}</span>
-
-          <!-- 隐藏的提交表单 -->
           <form method="POST" class="edit-form" style="display:none;">
             <input type="hidden" name="edit_task_id" value="{{ tid }}">
             <input type="hidden" name="edit_task_text" class="edit-text-hidden">
@@ -180,31 +205,43 @@
       {% endfor %}
     </ul>
 
-    <!-- —— MISSION COMPLETE 归档按钮 —— -->
     {% set incomplete = tasks | selectattr('2', 'equalto', 0) | list %}
     {% if project[3] == 0 and incomplete|length == 0 and tasks|length > 0 %}
       <form method="POST">
-        <button type="submit" name="complete">🎉 MISSION COMPLETE</button>
+        <button type="submit" name="complete">★ MISSION COMPLETE ★</button>
       </form>
     {% endif %}
 
     <div class="nav">
-      <a href="{{ url_for('home') }}">← 返回仪表盘</a>
-      <a href="{{ url_for('project_create') }}">➕ 新建项目</a>
+      <a href="{{ url_for('home') }}">◀ CONSOLE</a>
+      <a href="{{ url_for('project_create') }}">NEW MISSION</a>
     </div>
   </div>
 
   <script>
-    // —— 项目简介编辑逻辑 —— 
+    // 星空背景
+    const canvas = document.getElementById('star-canvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    const stars = Array(100).fill().map(() => ({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r: Math.random() }));
+    function draw() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "rgba(255,255,255,0.7)";
+        stars.forEach(s => { ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2); ctx.fill(); });
+    }
+    draw();
+
+    // —— JS 逻辑保持不变 —— 
     const editProjBtn = document.querySelector('.edit-project-btn');
     const infoView    = document.querySelector('.info-view');
     const infoEdit    = document.querySelector('.info-edit');
-    editProjBtn.addEventListener('click', ()=>{
-      infoView.style.display = 'none';
-      infoEdit.style.display = '';
-    });
+    if(editProjBtn) {
+        editProjBtn.addEventListener('click', ()=>{
+          infoView.style.display = 'none';
+          infoEdit.style.display = '';
+        });
+    }
 
-    // —— 子任务编辑逻辑 —— 
     document.querySelectorAll('li[data-task-id]').forEach(li => {
       const editBtn = li.querySelector('.edit-btn');
       const saveBtn = li.querySelector('.save-btn');
@@ -213,25 +250,29 @@
       const form    = li.querySelector('.edit-form');
       const hidden  = form.querySelector('.edit-text-hidden');
 
-      // 进入编辑态
       editBtn.addEventListener('click', e => {
         e.preventDefault();
         label.style.display   = 'none';
-        input.style.display   = 'inline-block';  // ← 显式显示
+        input.style.display   = 'block'; // 修正为 block 以配合新的样式
         editBtn.style.display = 'none';
-        saveBtn.style.display = '';
+        saveBtn.style.display = 'inline-block';
+        input.focus();
       });
 
-      // 点击保存
       saveBtn.addEventListener('click', e => {
         e.preventDefault();
         const val = input.value.trim();
-        if (!val) {
-          alert('子任务不能为空');
-          return;
-        }
+        if (!val) { alert('Objective cannot be empty'); return; }
         hidden.value = val;
         form.submit();
+      });
+      
+      // 增加回车保存功能
+      input.addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveBtn.click();
+        }
       });
     });
   </script>
