@@ -1,0 +1,1 @@
+用vscode ssh访问，直接右键tree文件夹，点击download即可

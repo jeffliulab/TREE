@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LIUJIFU.ME</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body { font-family:"Segoe UI","Helvetica Neue",sans-serif; background:#f4f4f4; margin:0; padding:2em; }
+        .container { max-width:700px; margin:auto; background:#fff; padding:2em; border-radius:10px;
+                     box-shadow:0 0 10px rgba(0,0,0,0.05); }
+        h2 { font-size:1.5em; color:#333; margin-bottom:1em; }
+        section { margin-bottom:2em; }
+        input[type="text"], textarea {
+            width:100%; padding:0.8em; margin-bottom:1em; border:1px solid #ccc; border-radius:6px;
+            font-family:inherit; box-sizing:border-box;
+        }
+        button {
+            padding:0.7em 1.5em; font-size:1em; background:#007acc; color:#fff; border:none;
+            border-radius:6px; cursor:pointer;
+        }
+        button:hover { background:#005f99; }
+        ul { list-style:none; padding:0; }
+        li { margin-bottom:0.5em; }
+        .nav a, .nav button { margin-right:1em; font-size:0.95em; text-decoration:none; }
+        .subtasks { margin-left:1em; color:#555; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <h2>LIUJIFU.ME</h2>
+
+    <!-- 项目板块 -->
+    <section>
+      <h3>🔧 TO-DO LIST</h3>
+
+      <!-- 2025/7/1更新 -->
+      <!-- {% if projects %}
+        <ul>
+          {% for id, title, total, done in projects %}
+            <li>
+              <strong><a href="{{ url_for('project_detail', project_id=id) }}">{{ title }}</a></strong>
+              — {{ done or 0 }}/{{ total or 0 }} 完成
+              {% if tasks_map[id] %}
+                <ul class="subtasks">
+                  {% for sub in tasks_map[id] %}
+                    <li>◻️ {{ sub }}</li>
+                  {% endfor %}
+                </ul>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>暂无进行中项目。</p>
+      {% endif %} -->
+
+      <!-- 2025/7/1更新 -->
+      {% if projects_by_priority %}
+          {% for priority_level in priority_order %}
+              {% if projects_by_priority[priority_level] %}
+                  <h4 style="margin-top:1.5em; margin-bottom:0.5em; color:#666; border-bottom:1px solid #eee; padding-bottom:0.3em;">
+                      优先级 {{ priority_level }}
+                  </h4>
+                  <ul>
+                      {% for project in projects_by_priority[priority_level] %}
+                      <li>
+                          <strong style="display:inline-block; width:20px; text-align:center; background:#eee; border-radius:4px; margin-right:8px; font-size:0.9em;">
+                              {{ project.priority }}
+                          </strong>
+                          <strong><a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.title }}</a></strong>
+                          — {{ project.done or 0 }}/{{ project.total or 0 }} 完成
+                          
+                          {% if tasks_map[project.id] %}
+                          <ul class="subtasks">
+                              {% for sub in tasks_map[project.id] %}
+                              <li>◻️ {{ sub }}</li>
+                              {% endfor %}
+                          </ul>
+                          {% endif %}
+                      </li>
+                      {% endfor %}
+                  </ul>
+              {% endif %}
+          {% endfor %}
+      {% else %}
+          <p>暂无进行中项目。</p>
+      {% endif %}
+      <div class="nav">
+        <a href="{{ url_for('project_create') }}"><button>➕ 新建项目</button></a>
+        <a href="{{ url_for('project_archive') }}">查看已完成项目</a>
+      </div>
+    </section>
+
+    <hr>
+
+    <!-- 日记板块 -->
+    <section>
+      <h3>✍️ 写一篇新日记</h3>
+      <form method="POST">
+        <input type="text" name="title" placeholder="标题（可选）">
+        <textarea name="content" placeholder="正文内容..." rows="28" required></textarea>
+        <button type="submit">📝 保存日记</button>
+      </form>
+      <div class="nav" style="margin-top:1em;">
+        <a href="{{ url_for('diary_list') }}">📚 查看历史日记</a>
+        <a href="{{ url_for('logout') }}">🚪 退出</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

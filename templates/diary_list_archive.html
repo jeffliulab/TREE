@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>我的日记 | Tree 私密日记</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        body {
+            font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 2em;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #ffffff;
+            padding: 2em;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            border-radius: 10px;
+        }
+        h2 {
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 0.5em;
+            margin-bottom: 1em;
+        }
+        .nav {
+            margin-bottom: 2em;
+            font-size: 0.95em;
+        }
+        .nav a {
+            text-decoration: none;
+            color: #0066cc;
+            margin-right: 1em;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+        .timeline {
+            position: relative;
+            padding: 1em 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+        }
+        .timeline-item {
+            position: relative;
+            margin-bottom: 2em;
+            padding-left: 50px;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 13px;
+            top: 5px;
+            width: 18px;
+            height: 18px;
+            background: #0066cc;
+            border-radius: 50%;
+            border: 3px solid #ffffff;
+            box-shadow: 0 0 5px rgba(0,0,0,0.2);
+        }
+        .timeline-content h3 {
+            cursor: pointer;
+            font-size: 1.3em;
+            color: #333;
+            margin: 0;
+            transition: color 0.3s;
+        }
+        .timeline-content h3:hover {
+            color: #0066cc;
+        }
+        .timeline-content em {
+            font-size: 0.9em;
+            color: #777;
+            display: block;
+            margin-bottom: 1em;
+        }
+        .diary-content {
+            display: none;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.7;
+            font-size: 1em;
+            color: #2b2b2b;
+            background: #f9f9f9;
+            padding: 1em;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-top: 1em;
+            font-family: "Courier New", monospace;
+        }
+        .timeline-theme-header {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 1.5em;
+            margin-top: 1em;
+            cursor: pointer;
+        }
+        .timeline-theme-header h3 {
+            background-color: #0066cc;
+            color: white;
+            padding: 0.4em 1.2em;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 1.5em;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            position: relative;
+            padding-right: 2.5em;
+        }
+        .timeline-theme-header h3::after {
+            content: '▶';
+            position: absolute;
+            right: 1.2em;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.7em;
+            transition: transform 0.3s ease;
+        }
+        .timeline-theme-header.is-open h3::after {
+            transform: translateY(-50%) rotate(90deg);
+        }
+        .timeline-theme-header .timeline-dot {
+            background: #ffffff;
+            border: 4px solid #0066cc;
+            width: 22px;
+            height: 22px;
+            left: 9px;
+            top: 12px;
+        }
+        .chapter-content {
+            display: none; /* 关键：所有日记内容默认都是隐藏的 */
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>黄金时代</h2>
+        <div class="nav">
+             <p>
+                 截至目前共写了 <strong>{{ entry_count }}</strong> 篇日记。快捷导航：<br>
+                 <a href="/home">返回写日记</a>
+                 <a href="/logout">退出</a>
+                 <a href="/backup">备份日记（下载 .db 文件）</a>
+                 <a href="{{ url_for('history_editor.editor_page') }}">历史日记修改</a>
+             </p>
+        </div>
+        
+        <div class="timeline">
+            {% set timeline = timeline_items | reverse %}
+
+            {% for item in timeline %}
+                {% if item.type == 'theme_header' %}
+                    
+                    {% if not loop.first %}
+                        </div>
+                    {% endif %}
+
+                    <div class="timeline-theme-header" onclick="toggleChapter(this)">
+                        <div class="timeline-dot"></div>
+                        <h3>{{ item.title }}</h3>
+                    </div>
+
+                    <div class="chapter-content">
+
+                {% elif item.type == 'diary_entry' %}
+                    <div class="timeline-item">
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <h3 onclick="toggleDiary(this)">{{ item.title }}</h3>
+                            <p><em>{{ item.created_at }}</em></p>
+                            <div class="diary-content">{{ item.content }}</div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% else %}
+                <p>暂无日记。</p>
+            {% endfor %}
+
+            {% if timeline %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        // JS函数：用于展开/收起单篇日记
+        function toggleDiary(titleElement) {
+            const content = titleElement.parentElement.querySelector('.diary-content');
+            if (content) {
+                content.style.display = (content.style.display === 'none' || content.style.display === '') ? 'block' : 'none';
+            }
+        }
+
+        // JS函数：用于展开/收起整个篇章
+        function toggleChapter(headerElement) {
+            const contentWrapper = headerElement.nextElementSibling;
+            if (contentWrapper && contentWrapper.classList.contains('chapter-content')) {
+                if (contentWrapper.style.display === 'none' || contentWrapper.style.display === '') {
+                    contentWrapper.style.display = 'block';
+                    headerElement.classList.add('is-open');
+                } else {
+                    contentWrapper.style.display = 'none';
+                    headerElement.classList.remove('is-open');
+                }
+            }
+        }
+    </script>
+</body>
+</html>

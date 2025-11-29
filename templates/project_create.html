@@ -1,0 +1,42 @@
+<!-- templates/project_create.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>新建项目 | Tree 私密项目</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="container">
+    <h2>🆕 创建一个新项目</h2>
+
+    <!-- 2025/7/1更新 -->
+    <!-- <form method="POST">
+        <input type="text" name="title" placeholder="项目标题" required><br>
+        <textarea name="description" placeholder="项目描述..." rows="5"></textarea><br>
+        <button type="submit">✅ 创建项目</button>
+    </form> -->
+
+    <!-- 2025/7/1更新 -->
+    <form method="POST">
+        <input type="text" name="title" placeholder="项目标题" required><br>
+        <textarea name="description" placeholder="项目描述..." rows="5"></textarea><br>
+        
+        <div style="margin-bottom:1em;">
+            <label for="priority">优先级: </label>
+            <select name="priority" id="priority">
+                <option value="S">S (最高)</option>
+                <option value="A">A</option>
+                <option value="B" selected>B (默认)</option>
+                <option value="C">C</option>
+                <option value="Z">Z (最低)</option>
+            </select>
+        </div>
+        <button type="submit">✅ 创建项目</button>
+    </form>
+
+    <div class="nav">
+        <a href="{{ url_for('home') }}">← 返回项目首页</a>
+    </div>
+</div>
+</body>
+</html>

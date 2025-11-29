@@ -1,0 +1,587 @@
+# app.py
+# 后端逻辑
+import os
+from flask import Flask, render_template, request, redirect, url_for, session, send_file
+from flask_bcrypt import Bcrypt
+import sqlite3
+from datetime import datetime
+from config import SECRET_KEY, USERNAME, PASSWORD_HASH
+from encrypt import encrypt_text, decrypt_text
+# 新增的日记中主题功能
+from zoneinfo import ZoneInfo
+
+# --- ▼▼▼ 新增代码：注册蓝图 ▼▼▼ ---
+from history_editor import history_bp
+# --- ▲▲▲ 新增代码结束 ▲▲▲ ---
+
+app = Flask(__name__)
+app.secret_key = SECRET_KEY
+bcrypt = Bcrypt(app)
+
+# 我们为这个蓝图的所有路由都加上了 /history 的前缀, 这样更清晰地将功能分区
+app.register_blueprint(history_bp, url_prefix='/history')
+
+# --- ▼▼▼ 主题和时区配置 ▼▼▼ ---
+THEMES = [
+    # 示例：未来可以添加其他主题
+    # {
+    #     "title": "波士顿日记-6月",
+    #     "start": datetime(2025, 6, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": None,
+    #     "timezone": ZoneInfo("America/New_York")
+    # },
+    {
+        "title": "无主之地回忆水晶：1995-2009",
+        "start": datetime(1995, 12, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2008, 8, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("Asia/Shanghai") 
+    },
+    {
+        "title": "塔纳波契亚回忆水晶：2009-2019",
+        "start": datetime(2009, 1, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2018, 12, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("Asia/Shanghai") 
+    },
+    {
+        "title": "卡莱卡玛罗回忆水晶：2019-2025",
+        "start": datetime(2018, 12, 31, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2025, 5, 11, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("Asia/Shanghai") 
+    },
+    {
+        "title": "安德洛依达回忆水晶：2025-present",
+        "start": datetime(2025, 5, 11, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2025, 5, 25, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("Asia/Shanghai") 
+    },
+    {
+        "title": "蛇形物语",
+        "start": datetime(2025, 5, 25, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2025, 8, 24, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("America/New_York") 
+    },
+    {
+        "title": "王国一部",
+        "start": datetime(2025, 8, 24, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "end":None,
+        "timezone": ZoneInfo("America/New_York") 
+    },
+
+]
+# 为不属于任何特殊主题的日记设置一个默认显示时区
+DEFAULT_TIMEZONE = ZoneInfo("UTC")
+# 常用时区：
+# Asia/Shanghai
+# Asia/Tokyo
+# America/Los_Angeles
+# Pacific/Honolulu
+# Europe/London
+# Europe/Paris
+# Australia/Sydney
+# Pacific/Auckland
+# --- ▲▲▲ 配置结束 ▲▲▲ ---
+
+DB_PATH = 'diary.db'
+PROJECT_DB = 'project.db'
+HISTORICAL_DB_PATH = 'historical_diary.db' # 新增的历史日记数据库路径
+
+
+def init_db():
+    conn = sqlite3.connect(DB_PATH)
+    c = conn.cursor()
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS diary (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT,
+            content TEXT,
+            created_at TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
+
+
+def init_project_db():
+    conn = sqlite3.connect(PROJECT_DB)
+    c = conn.cursor()
+    # projects 表
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT,
+            created_at TEXT
+        )
+    ''')
+    # 动态加 archived 列
+    c.execute("PRAGMA table_info(projects)")
+    cols = [r[1] for r in c.fetchall()]
+    if 'archived' not in cols:
+        c.execute("ALTER TABLE projects ADD COLUMN archived INTEGER DEFAULT 0")
+
+    # 2025/7/1更新：增加了优先级设置，S > A > B > C > Z，默认Z
+    if 'priority' not in cols:
+        c.execute("ALTER TABLE projects ADD COLUMN priority TEXT DEFAULT 'Z'")
+
+    # tasks 表
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER,
+            task TEXT,
+            done INTEGER DEFAULT 0,
+            created_at TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+
+# 2025/7/1增加的两个init内容，防止更新数据库内容后缺少字段
+init_db()
+init_project_db()
+
+def count_tasks(project_id, done=None):
+    """返回某项目的子任务数量；done=None 返回总数，done=0/1 返回对应状态数"""
+    conn = sqlite3.connect(PROJECT_DB)
+    c = conn.cursor()
+    if done is None:
+        c.execute('SELECT COUNT(*) FROM tasks WHERE project_id=?', (project_id,))
+    else:
+        c.execute('SELECT COUNT(*) FROM tasks WHERE project_id=? AND done=?', (project_id, done))
+    result = c.fetchone()[0]
+    conn.close()
+    return result
+
+
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        u = request.form['username']
+        p = request.form['password']
+        if u == USERNAME and bcrypt.check_password_hash(PASSWORD_HASH, p):
+            session['logged_in'] = True
+            session['key'] = p
+            return redirect(url_for('home'))
+        return render_template('login.html', error='登录失败，请检查用户名或密码')
+    return render_template('login.html')
+
+
+@app.route('/home', methods=['GET', 'POST'])
+def home():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    # — 写日记提交 —
+    if request.method == 'POST':
+        title = request.form['title'].strip() or datetime.now().strftime('%Y-%m-%d 日记')
+        content = request.form['content'].strip()
+        enc = encrypt_text(content, session['key'])
+        with sqlite3.connect(DB_PATH) as conn:
+            # 2025-7-2增加了下面这一行
+            utc_now = datetime.now(ZoneInfo("UTC")).strftime('%Y-%m-%d %H:%M:%S')
+            conn.execute(
+                'INSERT INTO diary (title, content, created_at) VALUES (?, ?, ?)',
+                (title, enc, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+            )
+        return redirect(url_for('home'))
+
+    # 2025/7/1更新
+    conn = sqlite3.connect(PROJECT_DB)
+    conn.row_factory = sqlite3.Row 
+    c = conn.cursor()
+
+    c.execute('''
+        SELECT
+            p.id, p.title, p.priority,
+            COUNT(t.id) AS total,
+            SUM(t.done) AS done
+        FROM projects p
+        LEFT JOIN tasks t ON p.id = t.project_id
+        WHERE p.archived = 0
+        GROUP BY p.id
+        ORDER BY
+            CASE p.priority
+                WHEN 'S' THEN 1
+                WHEN 'A' THEN 2
+                WHEN 'B' THEN 3
+                WHEN 'C' THEN 4
+                WHEN 'Z' THEN 5
+                ELSE 6
+            END,
+            p.created_at DESC
+    ''')
+    all_projects = c.fetchall()
+
+    # 按优先级对项目进行分组
+    PRIORITY_ORDER = ['S', 'A', 'B', 'C', 'Z']
+    projects_by_priority = {priority: [] for priority in PRIORITY_ORDER}
+    for project in all_projects:
+        p_key = project['priority']
+        if p_key in projects_by_priority:
+            projects_by_priority[p_key].append(project)
+
+    # — 为每个项目取最早的三个【未完成】子任务 —
+    tasks_map = {}
+    for project in all_projects:
+        pid = project['id']
+        # 这里 c 还是上面打开的 cursor，不需要重复连接
+        c.execute('''
+            SELECT task FROM tasks
+            WHERE project_id = ? AND done = 0
+            ORDER BY datetime(created_at) ASC
+            LIMIT 3
+        ''', (pid,))
+        tasks_map[pid] = [row[0] for row in c.fetchall()]
+
+    conn.close()
+
+    return render_template(
+        'home.html',
+        # 传递分组后的字典和优先级顺序
+        projects_by_priority=projects_by_priority,
+        priority_order=PRIORITY_ORDER,
+        tasks_map=tasks_map
+    )
+    # --- ▲▲▲ 替换结束 ▲▲▲ ---
+
+# 2025-7-1 在日记列表中增加了主题功能，所以diary_list函数全部重写
+# @app.route('/diary')
+# def diary_list():
+#     if not session.get('logged_in'):
+#         return redirect(url_for('login'))
+#     conn = sqlite3.connect(DB_PATH)
+#     c = conn.cursor()
+#     c.execute('SELECT title, content, created_at FROM diary ORDER BY created_at DESC')
+#     rows = c.fetchall()
+#     conn.close()
+#     entries = [(t, decrypt_text(ct, session['key']), at) for t, ct, at in rows]
+#     return render_template('diary_list.html',
+#                            entries=entries,
+#                            entry_count=len(entries))
+
+# --- ▼▼▼ 这是被完全重写和增强的 diary_list 函数 ▼▼▼ ---
+# @app.route('/diary')
+# def diary_list():
+#     if not session.get('logged_in'):
+#         return redirect(url_for('login'))
+
+#     # 1. 从数据库获取原始数据并排序
+#     conn = sqlite3.connect(DB_PATH)
+#     c = conn.cursor()
+#     c.execute('SELECT title, content, created_at FROM diary ORDER BY created_at DESC')
+#     rows = c.fetchall()
+#     conn.close()
+
+#     # 2. 预处理所有日记：解密、转换时间、并确定每篇日记所属的主题
+#     processed_entries = []
+#     now_utc = datetime.now(ZoneInfo("UTC"))
+#     for title, enc_content, created_at_str in rows:
+#         created_at_utc = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
+        
+#         # 确定该日记所属的主题
+#         entry_theme = None
+#         for theme in THEMES:
+#             theme_end = theme.get("end") or now_utc
+#             if theme["start"] <= created_at_utc <= theme_end:
+#                 entry_theme = theme
+#                 break
+        
+#         processed_entries.append({
+#             "title": title,
+#             "content": decrypt_text(enc_content, session['key']),
+#             "created_at_utc": created_at_utc,
+#             "theme": entry_theme # 直接将主题对象存起来
+#         })
+
+#     # 3. 构建最终的时间轴列表，在正确的位置插入主题标题
+#     timeline_items = []
+#     for i, current_entry in enumerate(processed_entries):
+#         # a. 处理当前日记条目
+#         display_timezone = current_entry["theme"]["timezone"] if current_entry["theme"] else DEFAULT_TIMEZONE
+#         local_time = current_entry["created_at_utc"].astimezone(display_timezone)
+#         formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+        
+#         timeline_items.append({
+#             "type": "diary_entry",
+#             "title": current_entry["title"],
+#             "content": current_entry["content"],
+#             "created_at": formatted_time
+#         })
+
+#         # b. 判断是否需要插入主题标题
+#         current_theme = current_entry["theme"]
+#         # 获取下一篇日记的主题，如果这是最后一篇，则下一篇主题为 None
+#         next_theme = processed_entries[i + 1]["theme"] if (i + 1) < len(processed_entries) else None
+        
+#         # 如果当前日记有主题，并且它的主题与下一篇日记的主题不同
+#         # (这标志着一个主题区块的结束)
+#         if current_theme and current_theme != next_theme:
+#             timeline_items.append({
+#                 "type": "theme_header",
+#                 "title": current_theme["title"]
+#             })
+
+#     # 4. 将最终构建好的列表传递给模板
+#     return render_template('diary_list.html',
+#                            timeline_items=timeline_items,
+#                            entry_count=len(processed_entries))
+# # --- ▲▲▲ diary_list 函数修改结束 ▲▲▲ ---
+# --- ▼▼▼ 这是按“双数据库”思路完全重写的 diary_list 函数 ▼▼▼ ---
+@app.route('/diary')
+def diary_list():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    all_rows = []
+
+    # 1. 读取主数据库 (diary.db)
+    conn_main = sqlite3.connect(DB_PATH)
+    c_main = conn_main.cursor()
+    c_main.execute('SELECT title, content, created_at FROM diary')
+    all_rows.extend(c_main.fetchall())
+    conn_main.close()
+
+    # 2. 读取历史数据库 (historical_diary.db)，如果它存在的话
+    if os.path.exists(HISTORICAL_DB_PATH):
+        conn_hist = sqlite3.connect(HISTORICAL_DB_PATH)
+        c_hist = conn_hist.cursor()
+        c_hist.execute('SELECT title, content, created_at FROM diary')
+        all_rows.extend(c_hist.fetchall())
+        conn_hist.close()
+
+    # 3. 预处理所有日记：解密、转换时间
+    processed_entries = []
+    now_utc = datetime.now(ZoneInfo("UTC"))
+    for title, enc_content, created_at_str in all_rows:
+        created_at_utc = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
+        
+        entry_theme = None
+        for theme in THEMES:
+            theme_end = theme.get("end") or now_utc
+            if theme["start"] <= created_at_utc <= theme_end:
+                entry_theme = theme
+                break
+        
+        processed_entries.append({
+            "title": title,
+            "content": decrypt_text(enc_content, session['key']),
+            "created_at_utc": created_at_utc,
+            "theme": entry_theme
+        })
+
+    # 4. 【关键】在内存中对合并后的所有日记按时间倒序排序
+    processed_entries.sort(key=lambda x: x['created_at_utc'], reverse=True)
+
+    # 5. 构建最终的时间轴列表，在正确的位置插入主题标题
+    timeline_items = []
+    for i, current_entry in enumerate(processed_entries):
+        display_timezone = current_entry["theme"]["timezone"] if current_entry["theme"] else DEFAULT_TIMEZONE
+        local_time = current_entry["created_at_utc"].astimezone(display_timezone)
+        formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
+        
+        timeline_items.append({
+            "type": "diary_entry",
+            "title": current_entry["title"],
+            "content": current_entry["content"],
+            "created_at": formatted_time
+        })
+
+        current_theme = current_entry["theme"]
+        next_theme = processed_entries[i + 1]["theme"] if (i + 1) < len(processed_entries) else None
+        
+        if current_theme and current_theme != next_theme:
+            timeline_items.append({
+                "type": "theme_header",
+                "title": current_theme["title"]
+            })
+
+    # 6. 将最终构建好的列表传递给模板
+    return render_template('diary_list.html',
+                           timeline_items=timeline_items,
+                           entry_count=len(processed_entries))
+# --- ▲▲▲ diary_list 函数修改结束 ▲▲▲ ---
+
+@app.route('/backup')
+def backup():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    return send_file(DB_PATH,
+                     as_attachment=True,
+                     download_name='diary_backup.db')
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
+
+@app.route('/project')
+def project_home():
+    # 兼容旧链接，直接到仪表盘
+    return redirect(url_for('home'))
+
+
+@app.route('/project/create', methods=['GET', 'POST'])
+def project_create():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    # 2025/7/1修改
+    # if request.method == 'POST':
+    #     title = request.form['title'].strip()
+    #     desc = request.form['description'].strip()
+    #     with sqlite3.connect(PROJECT_DB) as conn:
+    #         conn.execute(
+    #             'INSERT INTO projects (title, description, created_at) VALUES (?, ?, ?)',
+    #             (title, desc, datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+    #         )
+    #     return redirect(url_for('home'))
+    # 在 project_create() 函数内部，替换 if request.method == 'POST' 分支
+
+    # 2025/7/1修改
+    if request.method == 'POST':
+        title = request.form['title'].strip()
+        desc = request.form['description'].strip()
+        # --- ▼▼▼ 新增代码 ▼▼▼ ---
+        priority = request.form.get('priority', 'Z')
+        # --- ▲▲▲ 新增代码 ▲▲▲ ---
+        
+        with sqlite3.connect(PROJECT_DB) as conn:
+            conn.execute(
+                # --- ▼▼▼ 修改 SQL 语句和参数 ▼▼▼ ---
+                'INSERT INTO projects (title, description, created_at, priority) VALUES (?, ?, ?, ?)',
+                (title, desc, datetime.now().strftime('%Y-%m-%d %H:%M:%S'), priority)
+            )
+        return redirect(url_for('home'))
+    return render_template('project_create.html')
+
+
+
+
+# app.py 中的 project_detail 路由，替换原来的同名函数：
+
+@app.route('/project/<int:project_id>', methods=['GET', 'POST'])
+def project_detail(project_id):
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+
+    conn = sqlite3.connect(PROJECT_DB)
+    c = conn.cursor()
+
+    if request.method == 'POST':
+        # 1) 新增子任务
+        if 'new_task' in request.form:
+            task = request.form['new_task'].strip()
+            if task:
+                now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                c.execute(
+                    'INSERT INTO tasks (project_id, task, created_at) VALUES (?, ?, ?)',
+                    (project_id, task, now)
+                )
+
+        # 2) 切换完成状态
+        elif 'toggle' in request.form:
+            tid = int(request.form['toggle'])
+            c.execute('UPDATE tasks SET done = 1 - done WHERE id = ?', (tid,))
+
+        # 3) 编辑子任务文本（新加分支）
+        elif 'edit_task_id' in request.form:
+            tid      = int(request.form['edit_task_id'])
+            new_text = request.form.get('edit_task_text', '').strip()
+            if new_text:
+                c.execute('UPDATE tasks SET task = ? WHERE id = ?', (new_text, tid))
+
+        # 2025/7/1修改
+        # 4) 更新项目标题 / 简介
+        # elif 'update_title' in request.form or 'update_description' in request.form:
+        #     new_title = request.form.get('update_title', '').strip()
+        #     new_desc  = request.form.get('update_description', '').strip()
+        #     if new_title:
+        #         c.execute('UPDATE projects SET title = ? WHERE id = ?', (new_title, project_id))
+        #     # 简介允许清空
+        #     c.execute('UPDATE projects SET description = ? WHERE id = ?', (new_desc, project_id))
+        
+        # 2025/7/1修改
+        # --- ▼▼▼ 替换原来的 "更新项目标题 / 简介" 分支 ▼▼▼ ---
+        elif 'update_title' in request.form:
+            new_title = request.form.get('update_title', '').strip()
+            new_desc  = request.form.get('update_description', '').strip()
+            # --- ▼▼▼ 新增代码 ▼▼▼ ---
+            new_priority = request.form.get('update_priority', 'Z')
+            
+            if new_title:
+                c.execute('UPDATE projects SET title = ? WHERE id = ?', (new_title, project_id))
+            c.execute('UPDATE projects SET description = ? WHERE id = ?', (new_desc, project_id))
+            # --- ▼▼▼ 新增代码 ▼▼▼ ---
+            c.execute('UPDATE projects SET priority = ? WHERE id = ?', (new_priority, project_id))
+        # --- ▲▲▲ 替换结束 ▲▲▲ ---
+
+        # 5) 归档（MISSION COMPLETE），并跳转到已完成页面
+        elif 'complete' in request.form:
+            c.execute('UPDATE projects SET archived = 1 WHERE id = ?', (project_id,))
+            conn.commit()
+            conn.close()
+            return redirect(url_for('project_archive'))
+
+        conn.commit()
+
+    # 2025/7/1修改，execute拉取中增加了priority字段
+    # GET 拉取最新数据（包含 archived 字段）
+    c.execute(
+      'SELECT title, description, created_at, archived, priority '
+      'FROM projects WHERE id = ?',
+      (project_id,)
+    )
+    project = c.fetchone()
+
+    c.execute(
+      'SELECT id, task, done, created_at '
+      'FROM tasks WHERE project_id = ? ORDER BY created_at',
+      (project_id,)
+    )
+    tasks = c.fetchall()
+
+    conn.close()
+    return render_template(
+      'project_detail.html',
+      project_id=project_id,
+      project=project,
+      tasks=tasks
+    )
+
+
+@app.route('/project/archive')
+def project_archive():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
+    conn = sqlite3.connect(PROJECT_DB)
+    c = conn.cursor()
+    c.execute('''
+        SELECT p.id, p.title, p.description, p.created_at,
+               COUNT(t.id) AS total,
+               SUM(t.done) AS done
+        FROM projects p
+        LEFT JOIN tasks t ON p.id = t.project_id
+        WHERE p.archived = 1
+        GROUP BY p.id
+        ORDER BY p.created_at DESC
+    ''')
+    projects = c.fetchall()
+    tasks_map = {}
+    for pid, *_ in projects:
+        c.execute('SELECT task, done FROM tasks WHERE project_id = ? ORDER BY datetime(created_at) ASC', (pid,))
+        tasks_map[pid] = c.fetchall()
+    conn.close()
+    return render_template('project_archive.html', projects=projects, tasks_map=tasks_map)
+
+
+if __name__ == '__main__':
+    # 2025/7/1更新：将两个init移动到了开头，防止更新数据库字段后发生不匹配的问题
+    # init_db()
+    # init_project_db()
+    # 保留了最后的debug，用于本地开发测试
+    app.run(debug=True)

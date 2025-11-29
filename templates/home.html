@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>控制台 | LIUJIFU.ME</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --bg-color: #0b0d17;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #e0e6ed;
+            --text-dim: #94a3b8;
+            --accent-blue: #00f3ff;
+            --accent-red: #ff0055;
+            --accent-gold: #ffd700;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: "Segoe UI", "Roboto", sans-serif;
+            overflow-x: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* 动态星空背景 */
+        #star-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at bottom center, #1b2735 0%, #090a0f 100%);
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr; /* 左侧项目，右侧日记 */
+            gap: 2rem;
+            width: 90%;
+            max-width: 1400px;
+            height: 85vh;
+            animation: fadeIn 1s ease-out;
+        }
+
+        /* 左侧：任务侧边栏 */
+        .sidebar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .sidebar h3 {
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--accent-blue);
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.5rem;
+        }
+
+        .priority-group h4 {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            margin: 1rem 0 0.5rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .project-card {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .project-card:hover {
+            transform: translateX(5px);
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        /* 优先级配色 */
+        .priority-S { border-left-color: var(--accent-red); box-shadow: 0 0 10px rgba(255, 0, 85, 0.2); }
+        .priority-A { border-left-color: var(--accent-gold); }
+        .priority-B { border-left-color: var(--accent-blue); }
+        .priority-C { border-left-color: #ccc; }
+        .priority-Z { border-left-color: #555; }
+
+        .project-card a {
+            color: var(--text-main);
+            text-decoration: none;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+
+        .project-meta {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+        }
+
+        .subtasks {
+            margin-top: 0.5rem;
+            padding-left: 0;
+            list-style: none;
+        }
+        .subtasks li {
+            font-size: 0.75rem;
+            color: #888;
+            margin-bottom: 2px;
+            display: flex;
+            align-items: center;
+        }
+        .subtasks li::before {
+            content: '';
+            display: inline-block;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-blue);
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        /* 右侧：日记核心 */
+        .main-stage {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            height: 100%;
+        }
+
+        .diary-container {
+            flex: 1;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 243, 255, 0.05);
+            transition: box-shadow 0.5s ease;
+        }
+
+        .diary-container:focus-within {
+            box-shadow: 0 0 80px rgba(0, 243, 255, 0.15);
+            border-color: rgba(0, 243, 255, 0.3);
+        }
+
+        .diary-container h3 {
+            margin: 0 0 1rem 0;
+            font-weight: 300;
+            color: var(--text-dim);
+        }
+
+        input[name="title"] {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid var(--glass-border);
+            color: var(--text-main);
+            font-size: 1.5rem;
+            padding: 0.5rem 0;
+            margin-bottom: 1.5rem;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        input[name="title"]:focus { border-bottom-color: var(--accent-blue); }
+
+        textarea[name="content"] {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #ddd;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            resize: none;
+            outline: none;
+            font-family: "Courier New", monospace; /* 复古终端感 */
+        }
+        textarea::placeholder { color: rgba(255,255,255,0.2); }
+
+        /* 呼吸按钮 - 修改版：暗色风格 */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-submit {
+            /* 变得更暗，接近背景色，去掉高亮的渐变 */
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--glass-border);
+            color: var(--text-dim); /* 文字变暗 */
+            padding: 0.8rem 2.5rem;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            box-shadow: none; /* 去掉默认发光 */
+        }
+
+        /* 鼠标悬停时才稍微亮一点 */
+        .btn-submit:hover { 
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            background: rgba(0, 243, 255, 0.05);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        .links a {
+            color: var(--text-dim);
+            text-decoration: none;
+            margin-left: 1rem;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+        .links a:hover { color: var(--accent-blue); text-shadow: 0 0 8px var(--accent-blue); }
+
+        .btn-new-project {
+            background: transparent;
+            border: 1px dashed var(--glass-border);
+            color: var(--text-dim);
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        .btn-new-project:hover { border-color: var(--accent-blue); color: var(--accent-blue); }
+
+        /* 动画 */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+        
+        @media(max-width: 800px) {
+            .layout-grid { grid-template-columns: 1fr; height: auto; display: block; }
+            .sidebar { margin-bottom: 2rem; max-height: 300px; }
+            .diary-container { min-height: 500px; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="star-canvas"></canvas>
+
+    <div class="layout-grid">
+        <aside class="sidebar">
+            <h3>Mission Control</h3>
+            
+            {% if projects_by_priority %}
+                {% for priority_level in priority_order %}
+                    {% if projects_by_priority[priority_level] %}
+                        <div class="priority-group">
+                            <h4>PR-LEVEL: {{ priority_level }}</h4>
+                            {% for project in projects_by_priority[priority_level] %}
+                                <div class="project-card priority-{{ project.priority }}">
+                                    <a href="{{ url_for('project_detail', project_id=project.id) }}">{{ project.title }}</a>
+                                    <div class="project-meta">
+                                        进度: {{ project.done or 0 }}/{{ project.total or 0 }}
+                                    </div>
+                                    {% if tasks_map[project.id] %}
+                                    <ul class="subtasks">
+                                        {% for sub in tasks_map[project.id] %}
+                                        <li>{{ sub }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p style="color:var(--text-dim); text-align:center;">暂无任务指令</p>
+            {% endif %}
+
+            <a href="{{ url_for('project_create') }}">
+                <button class="btn-new-project">+ 初始化新项目</button>
+            </a>
+            <a href="{{ url_for('project_archive') }}" style="text-align:center; display:block; margin-top:10px; font-size:0.8rem; color:#666; text-decoration:none;">查看归档记录</a>
+        </aside>
+
+        <main class="main-stage">
+            <form method="POST" class="diary-container">
+                <h3>// NEW_DIARY</h3>
+                
+                <input type="text" name="title" placeholder="输入标题以建立记忆连接点..." autocomplete="off">
+                
+                <textarea name="content" placeholder="在此输入记忆数据..." required></textarea>
+                
+                <div class="action-bar">
+                    <button type="submit" class="btn-submit">UPLOAD_MEMORY</button>
+                    
+                    <div class="links">
+                        <a href="{{ url_for('diary_list') }}">进入记忆回廊 ▶</a>
+                        <a href="{{ url_for('logout') }}">断开连接</a>
+                    </div>
+                </div>
+            </form>
+        </main>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('star-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, stars = [];
+
+        function init() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            stars = [];
+            for(let i=0; i<150; i++) {
+                stars.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    r: Math.random() * 1.5,
+                    d: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "white";
+            stars.forEach(s => {
+                ctx.beginPath();
+                ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+                ctx.fill();
+                s.y -= s.d; // 向上漂浮
+                if(s.y < 0) s.y = height;
+            });
+            requestAnimationFrame(draw);
+        }
+
+        window.addEventListener('resize', init);
+        init();
+        draw();
+    </script>
+</body>
+</html>

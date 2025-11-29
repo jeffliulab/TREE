@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>已完成项目 | Tree 私密项目</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+      body { font-family:"Segoe UI","Helvetica Neue",sans-serif; background:#f4f4f4; margin:0; padding:2em; }
+      .container { max-width:700px; margin:auto; background:#fff; padding:2em; border-radius:10px;
+                   box-shadow:0 0 10px rgba(0,0,0,0.05); }
+      h2 { font-size:1.5em; color:#333; margin-bottom:1em; }
+      .entry { margin-bottom:1.5em; }
+      .toggle-btn { background:#007acc; color:#fff; border:none; padding:0.5em 1em; border-radius:6px; cursor:pointer; }
+      .toggle-btn:hover { background:#005f99; }
+      ul { list-style:none; padding:0; margin-top:0.5em; }
+      li { margin-bottom:0.3em; }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <h2>🏆 已完成项目</h2>
+
+    {% if projects %}
+      {% for id, title, desc, created, total, done in projects %}
+        <div class="entry">
+          <h3>{{ title }}</h3>
+          <p><small>创建于 {{ created }}</small></p>
+          <p>{{ desc }}</p>
+          <p>完成：{{ done or 0 }} / {{ total or 0 }}</p>
+          <button class="toggle-btn" data-id="{{ id }}">查看子任务</button>
+          <ul id="tasks-{{ id }}" style="display:none;">
+            {% for task_text, task_done in tasks_map[id] %}
+              <li>{{ task_done and '☑️' or '⬜' }} {{ task_text }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <hr>
+      {% endfor %}
+    {% else %}
+      <p>还没有已完成的项目。</p>
+    {% endif %}
+
+    <div class="nav">
+      <a href="{{ url_for('home') }}">← 返回首页</a>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.toggle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-id');
+        const ul = document.getElementById('tasks-' + id);
+        if (ul.style.display === 'none') {
+          ul.style.display = 'block';
+          btn.textContent = '收起子任务';
+        } else {
+          ul.style.display = 'none';
+          btn.textContent = '查看子任务';
+        }
+      });
+    });
+  </script>
+</body>
+</html>

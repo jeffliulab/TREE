@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <title>记忆回廊 | Tree</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        :root {
+            --void-bg: #050505;
+            --crystal-color: #00f3ff; /* 青色核心 */
+            --fragment-bg: rgba(20, 30, 40, 0.7);
+            --line-color: rgba(0, 243, 255, 0.2);
+        }
+
+        body {
+            background: var(--void-bg);
+            color: #fff;
+            font-family: "Segoe UI", sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+
+        /* 宇宙背景层 */
+        .cosmos-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(20, 0, 50, 0.5) 0%, transparent 60%),
+                radial-gradient(circle at 80% 20%, rgba(0, 100, 255, 0.1) 0%, transparent 40%);
+            z-index: -2;
+        }
+
+        /* 容器：就像一条时间河流 */
+        .time-stream {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 4rem 1rem;
+            position: relative;
+        }
+
+        /* 左侧的光束线 */
+        .time-stream::before {
+            content: '';
+            position: absolute;
+            left: 50px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, var(--crystal-color), transparent);
+            box-shadow: 0 0 15px var(--crystal-color);
+            z-index: -1;
+        }
+
+        /* --- 水晶主题头 (Theme Header) --- */
+        .timeline-theme-header {
+            position: relative;
+            padding-left: 80px;
+            margin: 4rem 0 2rem 0;
+            cursor: pointer;
+            perspective: 1000px;
+            transition: transform 0.3s;
+        }
+        
+        .timeline-theme-header:hover {
+            transform: scale(1.02);
+        }
+
+        /* 旋转的水晶图标 */
+        .crystal-core {
+            position: absolute;
+            left: 31px; /* 调整位置使其在线上 */
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+            width: 40px;
+            height: 40px;
+            background: rgba(0, 243, 255, 0.1);
+            border: 2px solid var(--crystal-color);
+            box-shadow: 0 0 20px var(--crystal-color), inset 0 0 10px var(--crystal-color);
+            transition: all 0.5s ease;
+            z-index: 2;
+        }
+
+        .timeline-theme-header.is-open .crystal-core {
+            transform: translateY(-50%) rotate(225deg); /* 旋转动画 */
+            background: var(--crystal-color);
+            box-shadow: 0 0 50px var(--crystal-color);
+        }
+
+        .theme-title {
+            background: linear-gradient(90deg, rgba(0,243,255,0.1), transparent);
+            padding: 1rem 2rem;
+            border-left: 4px solid var(--crystal-color);
+            font-size: 1.8rem;
+            font-weight: 200;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0,243,255,0.5);
+            color: #fff;
+            display: inline-block;
+        }
+
+        /* --- 记忆碎片 (Entries) --- */
+        .chapter-content {
+            display: none; /* 默认隐藏 */
+            padding-left: 80px;
+            animation: unfold 0.6s ease-out;
+        }
+
+        @keyframes unfold {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .timeline-item {
+            margin-bottom: 2rem;
+            position: relative;
+        }
+
+        /* 连接碎片的细线 */
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -30px;
+            top: 25px;
+            width: 30px;
+            height: 1px;
+            background: rgba(255,255,255,0.3);
+        }
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: -33px;
+            top: 22px;
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #fff;
+        }
+
+        .timeline-content {
+            background: var(--fragment-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(5px);
+            padding: 1.5rem;
+            border-radius: 4px;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            /* 更有质感的边框 */
+            border-left: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .timeline-content:hover {
+            transform: translateX(10px) translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-left-color: var(--crystal-color);
+            background: rgba(30, 40, 50, 0.9);
+        }
+
+        .timeline-content h3 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .timeline-content h3::after {
+            content: '▼';
+            font-size: 0.7em;
+            opacity: 0.5;
+            transition: transform 0.3s;
+        }
+        /* 展开时箭头旋转 */
+        .diary-content[style*="block"] ~ h3::after, 
+        .diary-content:not([style*="none"]) ~ h3::after { /* 这是一个简化的写法，实际上配合JS使用 */ }
+
+        .date-label {
+            display: block;
+            font-size: 0.8rem;
+            color: #88c0d0;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            font-family: monospace;
+        }
+
+        .diary-content {
+            display: none;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px dashed rgba(255,255,255,0.2);
+            font-family: "Courier New", monospace;
+            line-height: 1.8;
+            color: #d8dee9;
+            white-space: pre-wrap;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn { from { opacity:0; } to { opacity:1; } }
+
+        /* 顶部导航 */
+        .hud-nav {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .hud-nav a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .hud-nav a:hover { color: var(--crystal-color); }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 3rem;
+            color: rgba(255,255,255,0.5);
+            font-family: monospace;
+        }
+        .stats strong { color: var(--crystal-color); font-size: 1.5rem; }
+
+    </style>
+</head>
+<body>
+
+    <div class="cosmos-bg"></div>
+    <canvas id="particle-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1; pointer-events:none;"></canvas>
+
+    <div class="hud-nav">
+        <a href="/home">◀ RETURN TO CONSOLE</a>
+        <a href="/backup">BACKUP DATA</a>
+    </div>
+
+    <div class="time-stream">
+        <div class="stats">
+            // TOTAL FRAGMENTS FOUND: <strong>{{ entry_count }}</strong>
+        </div>
+
+        {% set timeline = timeline_items | reverse %}
+
+        {% for item in timeline %}
+            {% if item.type == 'theme_header' %}
+                
+                {% if not loop.first %}
+                    </div> {% endif %}
+
+                <div class="timeline-theme-header" onclick="toggleChapter(this)">
+                    <div class="crystal-core"></div>
+                    <div class="theme-title">{{ item.title }}</div>
+                </div>
+
+                <div class="chapter-content">
+
+            {% elif item.type == 'diary_entry' %}
+                <div class="timeline-item">
+                    <div class="timeline-content">
+                        <h3 onclick="toggleDiary(this)">{{ item.title }}</h3>
+                        <span class="date-label">{{ item.created_at }}</span>
+                        <div class="diary-content">{{ item.content }}</div>
+                    </div>
+                </div>
+            {% endif %}
+        {% else %}
+            <p style="text-align:center; color:#666;">VOID IS EMPTY.</p>
+        {% endfor %}
+
+        {% if timeline %}
+            </div> {% endif %}
+    </div>
+
+    <script>
+        // 1. 展开/收起日记内容
+        function toggleDiary(titleElement) {
+            const content = titleElement.parentElement.querySelector('.diary-content');
+            if (content) {
+                const isHidden = (content.style.display === 'none' || content.style.display === '');
+                content.style.display = isHidden ? 'block' : 'none';
+                titleElement.style.color = isHidden ? '#00f3ff' : '#fff'; // 激活时变色
+            }
+        }
+
+        // 2. 展开/收起章节（水晶）
+        function toggleChapter(headerElement) {
+            const contentWrapper = headerElement.nextElementSibling;
+            if (contentWrapper && contentWrapper.classList.contains('chapter-content')) {
+                const isHidden = (contentWrapper.style.display === 'none' || contentWrapper.style.display === '');
+                
+                if (isHidden) {
+                    contentWrapper.style.display = 'block';
+                    headerElement.classList.add('is-open');
+                } else {
+                    contentWrapper.style.display = 'none';
+                    headerElement.classList.remove('is-open');
+                }
+            }
+        }
+
+        // 3. 简单的漂浮粒子效果
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if(this.x > canvas.width) this.x = 0;
+                if(this.x < 0) this.x = canvas.width;
+                if(this.y > canvas.height) this.y = 0;
+                if(this.y < 0) this.y = canvas.height;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(0, 243, 255, ${this.opacity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for(let i=0; i<100; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
