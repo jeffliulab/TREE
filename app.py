@@ -31,13 +31,13 @@ THEMES = [
     #     "timezone": ZoneInfo("America/New_York")
     # },
     {
-        "title": "无主之地回忆录：1995-2009",
+        "title": "无主之地回忆录：1995-2008",
         "start": datetime(1995, 12, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "end": datetime(2008, 9, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("Asia/Shanghai") 
     },
     {
-        "title": "西北时期回忆录：2019-2025",
+        "title": "西北时期回忆录：2008-2014",
         "start": datetime(2008, 9, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
         "end": datetime(2014, 9, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("Asia/Shanghai") 
@@ -69,12 +69,18 @@ THEMES = [
     {
         "title": "后启示录：2025年秋",
         "start": datetime(2025, 8, 24, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2025, 12, 16, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2025, 12, 2, 19, 30, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
     {
-        "title": "重返校园的最后时光",
-        "start": datetime(2025, 12, 16, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+        "title": "狭间的宴：2025年冬",
+        "start": datetime(2025, 12, 2, 19, 30, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2026, 1, 15, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "timezone": ZoneInfo("America/New_York") 
+    },
+    {
+        "title": "2026年春",
+        "start": datetime(2026, 1, 15, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
         "end": datetime(2026, 6, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
