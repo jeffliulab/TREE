@@ -4,23 +4,17 @@
     <title>记忆回廊 | Tree</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* --- 全局变量：这是对齐的唯一真理 --- */
+        /* --- 全局变量 --- */
         :root {
-            /* 1. 定义时间轴（那根线）距离容器左侧的绝对位置 */
             --axis-x: 80px; 
-            
-            /* 2. 定义水晶的尺寸 */
             --crystal-size: 40px;
-            
-            /* 颜色定义 */
             --void-bg: #050505;
-            --crystal-color: #00f3ff;
+            --crystal-color: #00f3ff; /* 默认青色，会被JS动态颜色覆盖 */
             --fragment-bg: rgba(20, 30, 40, 0.7);
             --line-color: rgba(0, 243, 255, 0.2);
             --accent-red: #ff0055;
         }
 
-        /* 基础重置 */
         * { box-sizing: border-box; }
 
         body {
@@ -44,142 +38,77 @@
             z-index: -2;
         }
 
-        /* 主容器：限制宽度并居中 */
+        /* 主容器 */
         .time-stream {
             max-width: 900px;
-            margin: 0 auto; /* 容器居中 */
-            /* 关键：去掉左右内边距，确保内部绝对定位坐标从容器边缘(0px)开始计算 */
-            padding: 6rem 0 4rem 0;
+            margin: 0 auto; 
+            padding: 2rem 0 4rem 0;
             position: relative;
+            min-height: 50vh; /* 确保有高度 */
         }
 
-        /* ----------------------------------------------------
-           1. 绘制贯穿天地的主线
-           位置 = --axis-x (80px)
-        ---------------------------------------------------- */
+        /* 时间轴线 */
         .time-stream::before {
             content: '';
             position: absolute;
-            left: var(--axis-x); /* 绝对定位在 80px */
+            left: var(--axis-x);
             top: 0;
             bottom: 0;
             width: 2px;
             background: linear-gradient(to bottom, transparent, var(--crystal-color), transparent);
             box-shadow: 0 0 15px var(--crystal-color);
             z-index: -1;
+            transition: all 0.5s ease;
         }
 
-        /* ----------------------------------------------------
-           2. 记忆水晶 (Theme Header)
-           目标：水晶中心必须也在 80px
-        ---------------------------------------------------- */
+        /* 记忆水晶 (Theme Header) */
         .timeline-theme-header {
             position: relative;
-            /* 给文字留出空间：线的位置 + 60px间距 */
             padding-left: calc(var(--axis-x) + 60px);
-            margin: 5rem 0 3rem 0;
+            margin: 2rem 0 3rem 0;
             cursor: pointer;
             min-height: var(--crystal-size);
             display: flex;
             align-items: center;
         }
 
-        /* =========================================================
-           [NEW] 水晶本体 - 实体玻璃质感 (冷色调)
-           ========================================================= */
         .crystal-core {
             position: absolute;
-            /* 【核心对齐公式】保持不变 */
-            /* left = 线的位置(80px) - (水晶宽度40px / 2) + 线宽补偿(1px) */
             left: calc(var(--axis-x) - (var(--crystal-size) / 2) + 1px);
-            
             top: 50%;
             transform: translateY(-50%) rotate(45deg);
             width: var(--crystal-size);
             height: var(--crystal-size);
-            z-index: 2; /* 确保水晶盖在线上 */
-            
-            /* 平滑过渡：颜色、阴影、旋转都参与动画 */
+            z-index: 2;
             transition: all 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
-
-            /* 1. 实体半透明渐变背景：模拟光线穿过实体的感觉 */
-            background: linear-gradient(
-                135deg, 
-                rgba(0, 243, 255, 0.6) 0%,   /* 左上角较亮 */
-                rgba(0, 100, 200, 0.2) 100%  /* 右下角较暗且透明 */
-            );
-            
-            /* 2. 精细的边框 */
-            border: 1px solid rgba(150, 255, 255, 0.5);
-
-            /* 3. 复杂的阴影组合来模拟棱角和深度 */
-            box-shadow: 
-                /* 外部柔和光晕 */
-                0 0 15px rgba(0, 243, 255, 0.4),
-                /* 内部左上角高光反射 (模拟棱角) */
-                inset 2px 2px 4px rgba(255, 255, 255, 0.7),
-                /* 内部右下角深度阴影 */
-                inset -2px -2px 8px rgba(0, 50, 100, 0.4);
-            
-            /* 4. 毛玻璃特效：增加实体的质感 */
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(3px);
             -webkit-backdrop-filter: blur(3px);
         }
 
-        /* =========================================================
-           [NEW] 选中状态特效 - 暖色调切换 (洋红/橙色)
-           ========================================================= */
         .timeline-theme-header.is-open .crystal-core {
-            /* 旋转 225度 */
             transform: translateY(-50%) rotate(225deg);
-            
-            /* 1. 背景变为暖色渐变 */
-            background: linear-gradient(
-                135deg, 
-                rgba(255, 0, 128, 0.7) 0%,  /* 左上角洋红 */
-                rgba(255, 100, 0, 0.3) 100% /* 右下角橙红 */
-            );
-
-            /* 2. 边框变暖色 */
-            border-color: rgba(255, 150, 150, 0.6);
-
-            /* 3. 阴影变为暖色，光晕增强 */
-            box-shadow: 
-                /* 外部光晕增强且变红 */
-                0 0 30px rgba(255, 0, 85, 0.8),
-                /* 内部高光变暖白 */
-                inset 2px 2px 6px rgba(255, 200, 220, 0.8),
-                /* 内部深度变暗红 */
-                inset -3px -3px 10px rgba(100, 0, 40, 0.5);
         }
 
-        /* 标题文字 */
         .theme-title {
-            background: linear-gradient(90deg, rgba(0,243,255,0.1), transparent);
+            background: linear-gradient(90deg, rgba(255,255,255,0.05), transparent);
             padding: 0.8rem 2rem;
-            border-left: 3px solid var(--crystal-color);
+            border-left: 3px solid #fff;
             font-size: 1.6rem;
             font-weight: 200;
             letter-spacing: 2px;
             text-transform: uppercase;
-            text-shadow: 0 0 10px rgba(0,243,255,0.5);
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
             color: #fff;
             display: inline-block;
+            transition: all 0.3s;
         }
 
-        /* 选中时的标题样式微调 (可选) */
-        .timeline-theme-header.is-open .theme-title {
-            border-left-color: #ff0055; /* 标题左侧边框也跟着变红 */
-            background: linear-gradient(90deg, rgba(255, 0, 85, 0.1), transparent);
-        }
-
-        /* ----------------------------------------------------
-           3. 大事记 (Timeline Item)
-           目标：小圆点中心必须也在 80px
-        ---------------------------------------------------- */
+        /* 大事记 (Timeline Item) */
         .chapter-content {
             display: none;
-            padding-left: 0; /* 清零，防止多重缩进 */
+            padding-left: 0;
             animation: unfold 0.6s ease-out;
         }
 
@@ -191,31 +120,24 @@
         .timeline-item {
             position: relative;
             margin-bottom: 2rem;
-            /* 内容卡片位置：和上面的标题对齐，线的位置 + 60px */
             padding-left: calc(var(--axis-x) + 60px);
             padding-right: 20px;
         }
 
-        /* 连接短线：从主线连到卡片 */
         .timeline-item::before {
             content: '';
             position: absolute;
-            left: var(--axis-x); /* 起点：线的位置(80px) */
+            left: var(--axis-x);
             top: 25px;
-            width: 60px; /* 连接到内容 */
+            width: 60px;
             height: 1px;
             background: rgba(255,255,255,0.3);
         }
 
-        /* 小圆点 */
         .timeline-item::after {
             content: '';
             position: absolute;
-            /* 【核心对齐公式】 */
-            /* left = 线的位置(80px) - (圆点宽度6px / 2) + 线宽补偿(1px) */
-            /* 结果 = 78px */
             left: calc(var(--axis-x) - 3px + 1px);
-            
             top: 22px;
             width: 6px;
             height: 6px;
@@ -225,7 +147,6 @@
             z-index: 1;
         }
 
-        /* 卡片样式 */
         .timeline-content {
             background: var(--fragment-bg);
             border: 1px solid rgba(255,255,255,0.1);
@@ -240,7 +161,6 @@
         .timeline-content:hover {
             transform: translateX(10px);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border-left-color: var(--crystal-color);
             background: rgba(30, 40, 50, 0.9);
         }
 
@@ -251,13 +171,6 @@
             cursor: pointer;
             display: flex;
             justify-content: space-between;
-        }
-
-        .timeline-content h3::after {
-            content: '▼';
-            font-size: 0.7em;
-            opacity: 0.5;
-            transition: transform 0.3s;
         }
 
         .date-label {
@@ -310,17 +223,51 @@
         .hud-nav a:hover { color: var(--crystal-color); text-shadow: 0 0 5px var(--crystal-color); }
         .hud-nav a.danger-link:hover { color: var(--accent-red); text-shadow: 0 0 5px var(--accent-red); }
 
+        /* 时间线选择器容器 */
+        .timeline-selector {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 8rem auto 0 auto;
+            z-index: 10;
+            flex-wrap: wrap;
+        }
+
+        /* 按钮基础样式 */
+        .ts-btn {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.6);
+            padding: 8px 24px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: "Segoe UI", sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .ts-btn:hover {
+            border-color: #fff;
+            color: #fff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
         .stats {
             text-align: center;
-            margin-bottom: 3rem;
+            margin: 2rem 0;
             color: rgba(255,255,255,0.5);
             font-family: monospace;
         }
         .stats strong { color: var(--crystal-color); font-size: 1.5rem; }
 
         @media(max-width: 768px) {
-            :root { --axis-x: 30px; } /* 移动端让线靠左一点 */
+            :root { --axis-x: 30px; }
             .hud-nav { top: auto; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; justify-content: center; }
+            .timeline-selector { margin-top: 5rem; }
         }
     </style>
 </head>
@@ -335,18 +282,23 @@
         <a href="/backup">BACKUP DATA</a>
     </div>
 
+    <div id="timeline-buttons-container" class="timeline-selector"></div>
+
     <div class="time-stream">
         <div class="stats">
-            // TOTAL MEMORY FRAGMENTS: <strong>{{ entry_count }}</strong>
+            <span>TOTAL MEMORY FRAGMENTS:</span> <strong id="fragment-count">{{ entry_count }}</strong>
         </div>
 
-        {% set timeline = timeline_items | reverse %}
+        {% set timeline = timeline_items %}
         
         {% set ns = namespace(chapter_open=false) %}
 
         {% for item in timeline %}
+            
+            {# --- 情况1：主题标题 (开启水晶) --- #}
             {% if item.type == 'theme_header' %}
                 
+                {# 理论上不需要这行，因为 Terminator 应该已经关过了，但保留作为双重保险 #}
                 {% if ns.chapter_open %}
                     </div> 
                 {% endif %}
@@ -359,8 +311,17 @@
                 <div class="chapter-content">
                 {% set ns.chapter_open = true %}
 
+            {# --- 情况2：主题终结符 (关闭水晶) --- #}
+            {% elif item.type == 'theme_terminator' %}
+                
+                {% if ns.chapter_open %}
+                    </div> 
+                    {% set ns.chapter_open = false %}
+                {% endif %}
+
+            {# --- 情况3：日记条目 --- #}
             {% elif item.type == 'diary_entry' %}
-                <div class="timeline-item">
+                <div class="timeline-item" data-date="{{ item.created_at | string | truncate(10, True, '') }}">
                     <div class="timeline-content">
                         <h3 onclick="toggleDiary(this)">{{ item.title }}</h3>
                         <span class="date-label">{{ item.created_at }}</span>
@@ -368,10 +329,12 @@
                     </div>
                 </div>
             {% endif %}
+
         {% else %}
             <p style="text-align:center; color:#666;">VOID IS EMPTY.</p>
         {% endfor %}
 
+        {# 循环结束后，如果还有没关的 div，把它关掉 #}
         {% if ns.chapter_open %}
             </div> 
         {% endif %}
@@ -379,12 +342,183 @@
     </div>
 
     <script>
+        /**
+         * ★★★ 修复后的配置表：确保 ID 唯一 ★★★
+         */
+        const TIMELINE_CONFIG = [
+            {
+                name: "古事记",
+                id: "past", // 唯一 ID
+                color: "#A1887F", // 【羊皮卷褐】象征泛黄的旧记忆
+                start: null,      
+                end: "2025-05-25" 
+            },
+            {
+                name: "日记",
+                id: "present", // 唯一 ID
+                color: "#00E676", // 更新为绿色，契合蛇形物语
+                start: "2025-05-25",
+                end: "2100-01-01",
+                default: true     
+            },
+            {
+                name: "下界书",
+                id: "book_abyss", // 【深渊紫】象征塔纳波契亚的深海，深沉的虚无与内省
+                color: "#6200EA",
+                start: "2100-01-02",      
+                end: "2199-12-31" 
+            },
+            {
+                name: "人界书",
+                id: "book_human", // 【真金黄】象征黄金钟、世俗的王权与财富（Visual Pop）
+                color: "#FFD700", 
+                start: "2200-01-02",      
+                end: "2299-12-31" 
+            },
+            {
+                name: "天界书",
+                id: "book_heaven", // 修复：使用唯一 ID
+                color: "#00BFFF", // 深空蓝
+                start: "2300-01-02",      
+                end: "2399-12-31" 
+            },
+            {
+                name: "黄金律法",
+                id: "future", // 唯一 ID
+                color: "#FF00FF",  // 【奇点红/霓虹洋红】象征最终的真理，不可见光谱的极点
+                start: "2400-01-01",
+                end: null         
+            }
+        ];
+
+        const container = document.getElementById('timeline-buttons-container');
+
+        // 1. 初始化按钮
+        function initButtons() {
+            container.innerHTML = ''; 
+            TIMELINE_CONFIG.forEach(config => {
+                const btn = document.createElement('button');
+                btn.className = 'ts-btn';
+                btn.innerText = config.name;
+                btn.dataset.id = config.id;
+                btn.onclick = () => switchTimeline(config.id);
+                container.appendChild(btn);
+            });
+        }
+
+        // --- 辅助函数：判断单个条目是否应该显示 ---
+        function shouldShowItem(item, config) {
+            const dateStr = item.getAttribute('data-date');
+            if (!dateStr) return false;
+
+            // 字符串直接比较 YYYY-MM-DD
+            if (config.start && dateStr < config.start) return false;
+            if (config.end && dateStr >= config.end) return false;
+            
+            return true;
+        }
+
+        // 2. 切换时间线 (带计数功能)
+        function switchTimeline(targetId) {
+            const targetConfig = TIMELINE_CONFIG.find(c => c.id === targetId);
+            if (!targetConfig) return;
+
+            // 设置全局主色调
+            document.documentElement.style.setProperty('--crystal-color', targetConfig.color);
+
+            // A. 按钮高亮逻辑
+            document.querySelectorAll('.ts-btn').forEach(btn => {
+                if (btn.dataset.id === targetId) {
+                    btn.classList.add('active');
+                    btn.style.borderColor = targetConfig.color;
+                    btn.style.color = targetConfig.color;
+                    btn.style.boxShadow = `0 0 15px ${targetConfig.color}4D`;
+                    btn.style.textShadow = `0 0 5px ${targetConfig.color}`;
+                    btn.style.background = `${targetConfig.color}1A`;
+                } else {
+                    btn.classList.remove('active');
+                    btn.style = ""; 
+                }
+            });
+
+            // B. 内容筛选逻辑 & 计数
+            const allElements = document.querySelectorAll('.time-stream > div');
+            let currentHeader = null;
+            let visibleCount = 0; 
+
+            allElements.forEach(el => {
+                // 情况1: 处理标题水晶
+                if (el.classList.contains('timeline-theme-header')) {
+                    currentHeader = el;
+                    el.style.display = 'none'; // 默认先隐藏
+                    
+                    // 动态更新水晶颜色
+                    const crystal = el.querySelector('.crystal-core');
+                    const title = el.querySelector('.theme-title');
+                    if(crystal) {
+                        crystal.style.boxShadow = `0 0 15px ${targetConfig.color}66, inset 2px 2px 4px rgba(255,255,255,0.7), inset -2px -2px 8px rgba(0,0,0,0.5)`;
+                        crystal.style.background = `linear-gradient(135deg, ${targetConfig.color}99 0%, rgba(0,0,0,0.2) 100%)`;
+                    }
+                    if(title) {
+                        title.style.borderLeftColor = targetConfig.color;
+                    }
+
+                } 
+                // 情况2: 处理章节内容容器 (有主题的日记)
+                else if (el.classList.contains('chapter-content')) {
+                    const items = el.querySelectorAll('.timeline-item');
+                    let hasVisibleItem = false;
+
+                    items.forEach(item => {
+                        const isVisible = shouldShowItem(item, targetConfig);
+                        item.style.display = isVisible ? 'block' : 'none';
+                        if (isVisible) {
+                            hasVisibleItem = true;
+                            visibleCount++; 
+                        }
+                    });
+
+                    // 联动显示标题
+                    if (hasVisibleItem && currentHeader) {
+                        currentHeader.style.display = 'flex';
+                        el.style.display = currentHeader.classList.contains('is-open') ? 'block' : 'none';
+                    } else {
+                        el.style.display = 'none';
+                    }
+                }
+                // 情况3: 处理“孤儿”日记条目 (历史日记)
+                else if (el.classList.contains('timeline-item')) {
+                    const isVisible = shouldShowItem(el, targetConfig);
+                    el.style.display = isVisible ? 'block' : 'none';
+                    if (isVisible) {
+                        visibleCount++; 
+                    }
+                }
+            });
+
+            // 更新页面顶部的计数数字
+            const countEl = document.getElementById('fragment-count');
+            if (countEl) {
+                countEl.innerText = visibleCount;
+            }
+        }
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initButtons();
+            
+            // 默认选中哪一个？这里逻辑是：优先选中 default，如果想看到全部，可以先临时改为 'past'
+            const defaultObj = TIMELINE_CONFIG.find(c => c.default) || TIMELINE_CONFIG[0];
+            if (defaultObj) switchTimeline(defaultObj.id);
+        });
+
+        // 展开收起逻辑
         function toggleDiary(titleElement) {
             const content = titleElement.parentElement.querySelector('.diary-content');
             if (content) {
                 const isHidden = (content.style.display === 'none' || content.style.display === '');
                 content.style.display = isHidden ? 'block' : 'none';
-                titleElement.style.color = isHidden ? '#00f3ff' : '#fff';
+                titleElement.style.color = isHidden ? getComputedStyle(document.documentElement).getPropertyValue('--crystal-color') : '#fff';
             }
         }
 
@@ -402,20 +536,13 @@
             }
         }
 
-        // 星空特效 (加大了星星数量和层次感)
+        // 星空特效
         const canvas = document.getElementById('particle-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initParticles();
-        }
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; initParticles(); }
         window.addEventListener('resize', resize);
-
         const starColors = ['255, 255, 255', '0, 243, 255', '150, 200, 255', '200, 180, 255'];
-
         class Particle {
             constructor(isInitial = false) { this.reset(isInitial); }
             reset(isInitial) {
@@ -445,18 +572,8 @@
                 ctx.fill();
             }
         }
-
-        function initParticles() {
-            particles = [];
-            for(let i=0; i<350; i++) particles.push(new Particle(true));
-        }
-
-        function animate() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animate);
-        }
-
+        function initParticles() { particles = []; for(let i=0; i<350; i++) particles.push(new Particle(true)); }
+        function animate() { ctx.clearRect(0, 0, canvas.width, canvas.height); particles.forEach(p => { p.update(); p.draw(); }); requestAnimationFrame(animate); }
         resize();
         animate();
     </script>

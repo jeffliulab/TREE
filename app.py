@@ -9,10 +9,8 @@ from config import SECRET_KEY, USERNAME, PASSWORD_HASH
 from encrypt import encrypt_text, decrypt_text
 # 新增的日记中主题功能
 from zoneinfo import ZoneInfo
-
-# --- ▼▼▼ 新增代码：注册蓝图 ▼▼▼ ---
+# 新增的历史日记功能
 from history_editor import history_bp
-# --- ▲▲▲ 新增代码结束 ▲▲▲ ---
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -30,61 +28,99 @@ THEMES = [
     #     "end": None,
     #     "timezone": ZoneInfo("America/New_York")
     # },
+    #====================================================================
+    #==============================  日记  ==============================
+    #====================================================================
     {
-        "title": "无主之地回忆录：1995-2008",
-        "start": datetime(1995, 12, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2008, 9, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "timezone": ZoneInfo("Asia/Shanghai") 
-    },
-    {
-        "title": "西北时期回忆录：2008-2014",
-        "start": datetime(2008, 9, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2014, 9, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "timezone": ZoneInfo("Asia/Shanghai") 
-    },
-    {
-        "title": "东北时期回忆录：2014-2018",
-        "start": datetime(2014, 9, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2018, 5, 31, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "timezone": ZoneInfo("Asia/Shanghai") 
-    },
-    {
-        "title": "浪人时期回忆录：2018-2022",
-        "start": datetime(2018, 5, 31, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2022, 6, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "timezone": ZoneInfo("Asia/Shanghai") 
-    },
-    {
-        "title": "淘金时期回忆录：2022-2025",
-        "start": datetime(2022, 6, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2025, 5, 25, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "timezone": ZoneInfo("Asia/Shanghai") 
-    },
-    {
-        "title": "蛇形物语：2025年夏",
+        "title": "2025年夏：蛇形物语（前篇）",
         "start": datetime(2025, 5, 25, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
         "end": datetime(2025, 8, 24, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
     {
-        "title": "后启示录：2025年秋",
+        "title": "2025年秋：蛇形物语（后篇）",
         "start": datetime(2025, 8, 24, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2025, 12, 2, 19, 30, 0, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2025, 12, 5, 19, 40, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
     {
-        "title": "狭间的宴：2025年冬",
-        "start": datetime(2025, 12, 2, 19, 30, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2026, 1, 15, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+        "title": "2025年冬：狭间的宴会",
+        "start": datetime(2025, 12, 5, 19, 40, 1, tzinfo=ZoneInfo("UTC")),
+        "end": datetime(2026, 3, 15, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
         "timezone": ZoneInfo("America/New_York") 
     },
-    {
-        "title": "2026年春",
-        "start": datetime(2026, 1, 15, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
-        "end": datetime(2026, 6, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
-        "timezone": ZoneInfo("America/New_York") 
-    },
+    # {
+    #     "title": "2026年春：主题待定中",
+    #     "start": datetime(2026, 3, 15, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(2026, 6, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "2026年夏：主题待定中",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    #====================================================================
+    #=========================== 人界书  =============================
+    #====================================================================
+    # {
+    #     "title": "古典时代",
+    #     "start": datetime(2200, 1, 1, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(2299, 1, 1, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "西北往事",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "东北往事",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "塔纳波契亚",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
 
+
+
+
+
+
+    #====================================================================
+    #============================ 黄金律法  ==============================
+    #====================================================================
+    # {
+    #     "title": "我的童年",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "TITLE",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
+    # {
+    #     "title": "TITLE",
+    #     "start": datetime(YYYY, MM, DD, 0, 0, 1, tzinfo=ZoneInfo("UTC")),
+    #     "end": datetime(YYYY, MM, DD, 0, 0, 0, tzinfo=ZoneInfo("UTC")),
+    #     "timezone": ZoneInfo("America/New_York") 
+    # },
 ]
 # 为不属于任何特殊主题的日记设置一个默认显示时区
 DEFAULT_TIMEZONE = ZoneInfo("UTC")
@@ -263,91 +299,8 @@ def home():
         priority_order=PRIORITY_ORDER,
         tasks_map=tasks_map
     )
-    # --- ▲▲▲ 替换结束 ▲▲▲ ---
 
-# 2025-7-1 在日记列表中增加了主题功能，所以diary_list函数全部重写
-# @app.route('/diary')
-# def diary_list():
-#     if not session.get('logged_in'):
-#         return redirect(url_for('login'))
-#     conn = sqlite3.connect(DB_PATH)
-#     c = conn.cursor()
-#     c.execute('SELECT title, content, created_at FROM diary ORDER BY created_at DESC')
-#     rows = c.fetchall()
-#     conn.close()
-#     entries = [(t, decrypt_text(ct, session['key']), at) for t, ct, at in rows]
-#     return render_template('diary_list.html',
-#                            entries=entries,
-#                            entry_count=len(entries))
 
-# --- ▼▼▼ 这是被完全重写和增强的 diary_list 函数 ▼▼▼ ---
-# @app.route('/diary')
-# def diary_list():
-#     if not session.get('logged_in'):
-#         return redirect(url_for('login'))
-
-#     # 1. 从数据库获取原始数据并排序
-#     conn = sqlite3.connect(DB_PATH)
-#     c = conn.cursor()
-#     c.execute('SELECT title, content, created_at FROM diary ORDER BY created_at DESC')
-#     rows = c.fetchall()
-#     conn.close()
-
-#     # 2. 预处理所有日记：解密、转换时间、并确定每篇日记所属的主题
-#     processed_entries = []
-#     now_utc = datetime.now(ZoneInfo("UTC"))
-#     for title, enc_content, created_at_str in rows:
-#         created_at_utc = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
-        
-#         # 确定该日记所属的主题
-#         entry_theme = None
-#         for theme in THEMES:
-#             theme_end = theme.get("end") or now_utc
-#             if theme["start"] <= created_at_utc <= theme_end:
-#                 entry_theme = theme
-#                 break
-        
-#         processed_entries.append({
-#             "title": title,
-#             "content": decrypt_text(enc_content, session['key']),
-#             "created_at_utc": created_at_utc,
-#             "theme": entry_theme # 直接将主题对象存起来
-#         })
-
-#     # 3. 构建最终的时间轴列表，在正确的位置插入主题标题
-#     timeline_items = []
-#     for i, current_entry in enumerate(processed_entries):
-#         # a. 处理当前日记条目
-#         display_timezone = current_entry["theme"]["timezone"] if current_entry["theme"] else DEFAULT_TIMEZONE
-#         local_time = current_entry["created_at_utc"].astimezone(display_timezone)
-#         formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
-        
-#         timeline_items.append({
-#             "type": "diary_entry",
-#             "title": current_entry["title"],
-#             "content": current_entry["content"],
-#             "created_at": formatted_time
-#         })
-
-#         # b. 判断是否需要插入主题标题
-#         current_theme = current_entry["theme"]
-#         # 获取下一篇日记的主题，如果这是最后一篇，则下一篇主题为 None
-#         next_theme = processed_entries[i + 1]["theme"] if (i + 1) < len(processed_entries) else None
-        
-#         # 如果当前日记有主题，并且它的主题与下一篇日记的主题不同
-#         # (这标志着一个主题区块的结束)
-#         if current_theme and current_theme != next_theme:
-#             timeline_items.append({
-#                 "type": "theme_header",
-#                 "title": current_theme["title"]
-#             })
-
-#     # 4. 将最终构建好的列表传递给模板
-#     return render_template('diary_list.html',
-#                            timeline_items=timeline_items,
-#                            entry_count=len(processed_entries))
-# # --- ▲▲▲ diary_list 函数修改结束 ▲▲▲ ---
-# --- ▼▼▼ 这是按“双数据库”思路完全重写的 diary_list 函数 ▼▼▼ ---
 @app.route('/diary')
 def diary_list():
     if not session.get('logged_in'):
@@ -355,14 +308,14 @@ def diary_list():
 
     all_rows = []
 
-    # 1. 读取主数据库 (diary.db)
+    # 1. 读取主数据库
     conn_main = sqlite3.connect(DB_PATH)
     c_main = conn_main.cursor()
     c_main.execute('SELECT title, content, created_at FROM diary')
     all_rows.extend(c_main.fetchall())
     conn_main.close()
 
-    # 2. 读取历史数据库 (historical_diary.db)，如果它存在的话
+    # 2. 读取历史数据库
     if os.path.exists(HISTORICAL_DB_PATH):
         conn_hist = sqlite3.connect(HISTORICAL_DB_PATH)
         c_hist = conn_hist.cursor()
@@ -370,12 +323,16 @@ def diary_list():
         all_rows.extend(c_hist.fetchall())
         conn_hist.close()
 
-    # 3. 预处理所有日记：解密、转换时间
+    # 3. 预处理
     processed_entries = []
     now_utc = datetime.now(ZoneInfo("UTC"))
+    
     for title, enc_content, created_at_str in all_rows:
-        created_at_utc = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
-        
+        try:
+            created_at_utc = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S').replace(tzinfo=ZoneInfo("UTC"))
+        except ValueError:
+            continue
+
         entry_theme = None
         for theme in THEMES:
             theme_end = theme.get("end") or now_utc
@@ -390,13 +347,30 @@ def diary_list():
             "theme": entry_theme
         })
 
-    # 4. 【关键】在内存中对合并后的所有日记按时间倒序排序
-    processed_entries.sort(key=lambda x: x['created_at_utc'], reverse=True)
+    # 4. 按时间正序排序 (旧 -> 新)
+    processed_entries.sort(key=lambda x: x['created_at_utc'])
 
-    # 5. 构建最终的时间轴列表，在正确的位置插入主题标题
+    # 5. 构建正序时间轴
     timeline_items = []
+    
     for i, current_entry in enumerate(processed_entries):
-        display_timezone = current_entry["theme"]["timezone"] if current_entry["theme"] else DEFAULT_TIMEZONE
+        current_theme = current_entry["theme"]
+        
+        prev_theme = processed_entries[i - 1]["theme"] if i > 0 else None
+        next_theme = processed_entries[i + 1]["theme"] if (i + 1) < len(processed_entries) else None
+
+        # --- A. 顶部盖子 (Header) ---
+        # 逻辑：如果当前有主题，且上一个条目主题不同。
+        # 说明这是该主题的第一篇（最旧的一篇），也就是主题的【开始】。
+        # 正序显示时，我们需要在这里打开 div。
+        if current_theme and current_theme != prev_theme:
+            timeline_items.append({
+                "type": "theme_header",
+                "title": current_theme["title"]
+            })
+
+        # --- B. 添加日记本体 ---
+        display_timezone = current_theme["timezone"] if current_theme else DEFAULT_TIMEZONE
         local_time = current_entry["created_at_utc"].astimezone(display_timezone)
         formatted_time = local_time.strftime('%Y-%m-%d %H:%M:%S %Z')
         
@@ -407,20 +381,21 @@ def diary_list():
             "created_at": formatted_time
         })
 
-        current_theme = current_entry["theme"]
-        next_theme = processed_entries[i + 1]["theme"] if (i + 1) < len(processed_entries) else None
-        
+        # --- C. 底部盖子 (Terminator) ---
+        # 逻辑：如果当前有主题，且下一个条目主题不同。
+        # 说明这是该主题的最后一篇（最新的一篇），也就是主题的【结束】。
+        # 正序显示时，我们需要在这里关闭 div。
         if current_theme and current_theme != next_theme:
             timeline_items.append({
-                "type": "theme_header",
-                "title": current_theme["title"]
+                "type": "theme_terminator"
             })
 
-    # 6. 将最终构建好的列表传递给模板
+    # 6. 直接发送列表，不需要前端 reverse
     return render_template('diary_list.html',
                            timeline_items=timeline_items,
                            entry_count=len(processed_entries))
-# --- ▲▲▲ diary_list 函数修改结束 ▲▲▲ ---
+
+
 
 @app.route('/backup')
 def backup():
